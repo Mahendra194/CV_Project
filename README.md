@@ -75,30 +75,27 @@ python characterize_potholes.py \
 
 ---
 
-## 📊 Methodology Summary
+## 📊 Methodology & Mathematical Formulas (Paper 2 Alignment)
 
-```
-Input Image (640x640)
-       │
-       ▼
-[Improved Backbone (Paper 1)]
-  Conv → C2fGhost → SPPF → BOTModule (Global Self-Attention)
-       │
-       ▼
-[Improved Neck (Paper 1)]
-  C2fGhost + LSKA Attention (Large Receptive Field)
-       │
-       ├─────────────────────────────────┐
-       ▼                                 ▼
-[LSCD-Seg Head]                 [Depth Estimator (Paper 2)]
-  ├── Classification              ├── Monocular Depth Map
-  ├── Bounding Boxes              └── Surface Reference Baseline
-  └── Prototype Masks (Proto)
-       │                                 │
-       └────────────────┬────────────────┘
-                        ▼
-       [Pothole Characterization]
-         • Area (Pixel Count)
-         • Depth (Relative Elevation Difference)
-         • Volume Estimation (Area × Relative Depth)
-```
+### 1. Segmentation & Damage Area (Section 5.1 & Page 20)
+- **Contour Area:** Pothole contour area calculated via mask polygons:
+  $$\text{Area}_{\text{pothole}} = \oint \text{contour}(x, y) \, dx\,dy \quad (\text{pixels})$$
+- **Total Damage Percentage:**
+  $$\text{Percentage of Damage (\%)} = \left(\frac{\sum \text{Area}_{\text{pothole}}}{\text{Total Image Area}}\right) \times 100$$
+
+### 2. Relative Pothole Depth (RPD) (Section 5.1 & Page 21)
+- **Pothole Depth ($PD$):** Mean normalized depth within the segmented pothole mask ($0.0 \le PD \le 1.0$).
+- **Surrounding Depth ($SD$):** Mean depth restricted strictly to immediate surrounding road pixels (adjacent ring boundary).
+- **Cavity Validation:** Verifies that $PD > SD$ (confirms recessed cavity).
+- **Relative Pothole Depth Formula:**
+  $$\text{RPD (\%)} = \frac{PD - SD}{SD} \times 100$$
+- **Absolute Depth Difference:**
+  $$\Delta D = (PD - SD) \times 100$$
+
+### 3. Hazard Severity Classification
+Based on RPD and Area:
+- **Low:** $\text{RPD} < 5\%$
+- **Moderate:** $5\% \le \text{RPD} < 12\%$
+- **High:** $12\% \le \text{RPD} < 18\%$ or $\text{Area} > 4000\text{ px}$ with $\text{RPD} \ge 6\%$
+- **Severe:** $\text{RPD} \ge 18\%$ or $\text{Area} > 8000\text{ px}$ with $\text{RPD} \ge 10\%$
+

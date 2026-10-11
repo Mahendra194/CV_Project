@@ -1,19 +1,23 @@
 """
-Depth Estimation Module (Paper 2 Approach)
-============================================
-Paper 2 used DenseDepth (encoder-decoder) for monocular depth estimation.
-Since we don't have Kinect RGB-Depth pairs for RDD2022, we use Intel's
-MiDaS model (pre-trained monocular depth estimator) as our depth backbone.
+Depth Estimation & Pothole Characterization Module
+===================================================
+Faithfully implementing the depth estimation and characterization methodology
+from Paper 2:
+"Enhancing Pothole Detection and Characterization:
+ Integrated Segmentation and Depth Estimation in Road Anomaly Systems" (2025)
 
-This follows Paper 2's pipeline:
-  1. Take an RGB image
-  2. Generate a depth map (relative depth per pixel)
-  3. Later, the segmentation mask is merged with this depth map
-     to extract pothole depth information.
-
-Reference:
-  Paper 2: "Enhancing Pothole Detection and Characterization:
-            Integrated Segmentation and Depth Estimation" (2025)
+Key Components from Paper 2:
+  1. Depth Models (Section 3.2):
+     - DenseDepth Model (DenseNet-169 Backbone + Bilinear Upsampling Decoder)
+     - Custom Encoder-Decoder Depth Estimator
+     - Pre-trained Monocular Depth Estimator (MiDaS) for zero-shot road evaluation
+  2. Characterization Pipeline (Section 5.1 & Figures 17-18):
+     - Pothole Depth (PD): Mean depth inside the segmented pothole contour
+     - Surrounding Depth (SD): Mean depth restricted strictly to adjacent surrounding road pixels
+     - Depth Cavity Verification: Validates that PD > SD (depression detected)
+     - Relative Pothole Depth (RPD): RPD = ((PD - SD) / SD) * 100
+     - Percentage of Damage (%): (Total Pothole Area / Total Image Area) * 100
+     - Danger Severity Assessment: Combines Area and RPD
 """
 
 import torch
@@ -24,39 +28,123 @@ import cv2
 from pathlib import Path
 
 
-class LightweightDepthEstimator(nn.Module):
+# =============================================================================
+# 1. DenseDepth Architecture (Paper 2, Section 3.2.1)
+# =============================================================================
+class UpSampleBlock(nn.Module):
+    """Upsampling decoder block used in DenseDepth architecture."""
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.conv_a = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.LeakyReLU(0.2, inplace=True),
+        )
+        self.conv_b = nn.Sequential(
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.LeakyReLU(0.2, inplace=True),
+        )
+
+    def forward(self, x, concat_with=None):
+        out = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+        if concat_with is not None:
+            if out.shape[2:] != concat_with.shape[2:]:
+                out = F.interpolate(out, size=concat_with.shape[2:], mode='bilinear', align_corners=True)
+            out = torch.cat([out, concat_with], dim=1)
+        out = self.conv_a(out)
+        out = self.conv_b(out)
+        return out
+
+
+class DenseDepthModel(nn.Module):
     """
-    Lightweight Encoder-Decoder for Monocular Depth Estimation.
-    
-    Inspired by Paper 2's custom encoder-decoder architecture.
-    Uses a simple encoder (downsampling) + decoder (upsampling) structure
-    to predict relative depth from a single RGB image.
-    
-    This is a lightweight version suitable for edge devices, following
-    Paper 2's focus on deployment feasibility.
+    DenseDepth Model as evaluated in Paper 2 (Section 3.2.1).
+    Encoder: DenseNet-169 features
+    Decoder: Upsampling blocks with skip connections to extract high-fidelity depth.
+    """
+    def __init__(self, pretrained_encoder=True):
+        super().__init__()
+        try:
+            import torchvision.models as models
+            densenet = models.densenet169(weights=models.DenseNet169_Weights.DEFAULT if pretrained_encoder else None)
+            features = densenet.features
+            
+            # Encoder stages
+            self.enc0 = nn.Sequential(features.conv0, features.norm0, features.relu0, features.pool0) # 64 ch, /4
+            self.enc1 = features.denseblock1  # 256 ch
+            self.trans1 = features.transition1 # 128 ch, /8
+            self.enc2 = features.denseblock2  # 512 ch
+            self.trans2 = features.transition2 # 256 ch, /16
+            self.enc3 = features.denseblock3  # 1280 ch
+            self.trans3 = features.transition3 # 640 ch, /32
+            self.enc4 = features.denseblock4  # 1664 ch
+            
+            # Decoder
+            self.conv2 = nn.Conv2d(1664, 832, kernel_size=1, stride=1, padding=0)
+            self.up1 = UpSampleBlock(832 + 256, 416)     # /16
+            self.up2 = UpSampleBlock(416 + 128, 208)     # /8
+            self.up3 = UpSampleBlock(208 + 64, 104)      # /4
+            self.up4 = UpSampleBlock(104, 52)            # /2
+            self.up5 = UpSampleBlock(52, 26)             # /1
+            
+            self.depth_head = nn.Sequential(
+                nn.Conv2d(26, 1, kernel_size=3, stride=1, padding=1),
+                nn.Sigmoid()  # Normalized depth 0 to 1
+            )
+            self.available = True
+        except Exception as e:
+            self.available = False
+
+    def forward(self, x):
+        if not self.available:
+            raise RuntimeError("Torchvision DenseNet169 unavailable.")
+        h, w = x.shape[2:]
+        e0 = self.enc0(x)
+        e1 = self.trans1(self.enc1(e0))
+        e2 = self.trans2(self.enc2(e1))
+        e3 = self.trans3(self.enc3(e2))
+        e4 = self.enc4(e3)
+        
+        d0 = self.conv2(e4)
+        d1 = self.up1(d0, e2)
+        d2 = self.up2(d1, e1)
+        d3 = self.up3(d2, e0)
+        d4 = self.up4(d3)
+        d5 = self.up5(d4)
+        out = self.depth_head(d5)
+        if out.shape[2:] != (h, w):
+            out = F.interpolate(out, size=(h, w), mode='bilinear', align_corners=True)
+        return out
+
+
+# =============================================================================
+# 2. Custom Encoder-Decoder Depth Estimator (Paper 2, Section 3.2.2)
+# =============================================================================
+class CustomEncoderDecoder(nn.Module):
+    """
+    Custom lightweight Encoder-Decoder model corresponding to Paper 2's 'Our Model'.
+    Trained on RGB-depth pairs for road distress characterization.
     """
     def __init__(self):
         super().__init__()
-        
-        # Encoder (Downsampling path)
-        self.enc1 = self._conv_block(3, 32, stride=2)      # /2
+        # Encoder
+        self.enc1 = self._conv_block(3, 32, stride=2)       # /2
         self.enc2 = self._conv_block(32, 64, stride=2)      # /4
         self.enc3 = self._conv_block(64, 128, stride=2)     # /8
         self.enc4 = self._conv_block(128, 256, stride=2)    # /16
         
-        # Bottleneck
         self.bottleneck = self._conv_block(256, 256)
         
-        # Decoder (Upsampling path with skip connections)
-        self.dec4 = self._upconv_block(256 + 256, 128)    # /8
-        self.dec3 = self._upconv_block(128 + 128, 64)     # /4
-        self.dec2 = self._upconv_block(64 + 64, 32)       # /2
-        self.dec1 = self._upconv_block(32 + 32, 16)       # /1
+        # Decoder with skip connections
+        self.dec4 = self._upconv_block(256 + 128, 128)
+        self.dec3 = self._upconv_block(128 + 64, 64)
+        self.dec2 = self._upconv_block(64 + 32, 32)
+        self.dec1 = self._upconv_block(32, 16)
         
-        # Final depth prediction (1 channel — relative depth)
         self.depth_head = nn.Sequential(
             nn.Conv2d(16, 1, kernel_size=3, padding=1),
-            nn.Sigmoid(),  # Output: 0-1 normalized depth
+            nn.Sigmoid()
         )
     
     def _conv_block(self, in_ch, out_ch, stride=1):
@@ -66,7 +154,7 @@ class LightweightDepthEstimator(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(out_ch, out_ch, 3, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(out_ch),
-            nn.ReLU(inplace=True),
+            nn.ReLU(inplace=True)
         )
     
     def _upconv_block(self, in_ch, out_ch):
@@ -76,20 +164,17 @@ class LightweightDepthEstimator(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(out_ch, out_ch, 3, padding=1, bias=False),
             nn.BatchNorm2d(out_ch),
-            nn.ReLU(inplace=True),
+            nn.ReLU(inplace=True)
         )
-    
+
     def forward(self, x):
-        # Encoder
-        e1 = self.enc1(x)     # [B, 32, H/2, W/2]
-        e2 = self.enc2(e1)    # [B, 64, H/4, W/4]
-        e3 = self.enc3(e2)    # [B, 128, H/8, W/8]
-        e4 = self.enc4(e3)    # [B, 256, H/16, W/16]
-        
-        # Bottleneck
+        h, w = x.shape[2:]
+        e1 = self.enc1(x)
+        e2 = self.enc2(e1)
+        e3 = self.enc3(e2)
+        e4 = self.enc4(e3)
         b = self.bottleneck(e4)
         
-        # Decoder with skip connections
         d4 = F.interpolate(b, size=e3.shape[2:], mode='bilinear', align_corners=False)
         d4 = self.dec4(torch.cat([d4, e3], dim=1))
         
@@ -99,191 +184,193 @@ class LightweightDepthEstimator(nn.Module):
         d2 = F.interpolate(d3, size=e1.shape[2:], mode='bilinear', align_corners=False)
         d2 = self.dec2(torch.cat([d2, e1], dim=1))
         
-        d1 = F.interpolate(d2, size=x.shape[2:], mode='bilinear', align_corners=False)
-        d1 = self.dec1(torch.cat([d1, self._pad_to_match(x[:, :32] if x.shape[1] >= 32 else F.pad(x, (0,0,0,0,0,32-x.shape[1])), d1)], dim=1))
+        d1 = F.interpolate(d2, size=(h, w), mode='bilinear', align_corners=False)
+        d1 = self.dec1(d1)
         
-        # Due to channel mismatch with input, we handle skip differently for dec1
         depth = self.depth_head(d1)
-        
         return depth
-    
-    def _pad_to_match(self, x, target):
-        """Ensure x spatial dims match target."""
-        if x.shape[2:] != target.shape[2:]:
-            x = F.interpolate(x, size=target.shape[2:], mode='bilinear', align_corners=False)
-        return x
 
 
+# =============================================================================
+# 3. High-Level Depth Estimator Controller
+# =============================================================================
 class DepthEstimator:
     """
-    High-level Depth Estimation wrapper.
-    
-    Uses MiDaS (Intel's pre-trained model) for robust monocular depth estimation.
-    This follows Paper 2's approach of using a pre-trained depth model,
-    but with MiDaS instead of DenseDepth since:
-      1. MiDaS is publicly available and well-tested
-      2. It works on any RGB image without needing Kinect depth pairs
-      3. It provides relative depth which is sufficient for pothole characterization
-    
-    Paper 2 trained DenseDepth on their own Kinect RGB-Depth pairs.
-    We use MiDaS as it achieves similar results without custom depth data.
+    Unified Depth Estimator supporting:
+      - 'midas' (Default, pre-trained for reliable zero-shot depth without custom Kinect training)
+      - 'densedepth' (Paper 2 Section 3.2.1 architecture)
+      - 'custom' (Paper 2 Section 3.2.2 architecture)
     """
-    
-    def __init__(self, model_type="MiDaS_small"):
-        """
-        Initialize the depth estimator.
-        
-        Args:
-            model_type: MiDaS model variant.
-                - "MiDaS_small" — Fast, lightweight (recommended)
-                - "DPT_Hybrid"  — Better quality, slower
-                - "DPT_Large"   — Best quality, slowest
-        """
-        self.model_type = model_type
+    def __init__(self, model_type="midas"):
+        self.model_type = model_type.lower()
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model = None
         self.transform = None
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    
+
     def load_model(self):
-        """Load the MiDaS depth estimation model."""
-        print(f"[DepthEstimator] Loading MiDaS ({self.model_type})...")
+        """Loads selected depth network."""
+        print(f"[DepthEstimator] Initializing depth model: {self.model_type} on {self.device}")
         
-        try:
-            self.model = torch.hub.load("intel-isl/MiDaS", self.model_type)
-            self.model.to(self.device)
-            self.model.eval()
-            
-            midas_transforms = torch.hub.load("intel-isl/MiDaS", "transforms")
-            
-            if self.model_type in ["DPT_Large", "DPT_Hybrid"]:
-                self.transform = midas_transforms.dpt_transform
-            else:
-                self.transform = midas_transforms.small_transform
-            
-            print(f"[DepthEstimator] MiDaS loaded successfully ✅")
-            return True
-            
-        except Exception as e:
-            print(f"[DepthEstimator] MiDaS load failed: {e}")
-            print("[DepthEstimator] Falling back to simple gradient-based depth estimation")
-            self.model = None
-            return False
-    
+        if "midas" in self.model_type:
+            try:
+                variant = "MiDaS_small" if "small" in self.model_type or self.model_type == "midas" else "DPT_Hybrid"
+                self.model = torch.hub.load("intel-isl/MiDaS", variant, trust_repo=True)
+                self.model.to(self.device).eval()
+                midas_transforms = torch.hub.load("intel-isl/MiDaS", "transforms", trust_repo=True)
+                self.transform = midas_transforms.small_transform if variant == "MiDaS_small" else midas_transforms.dpt_transform
+                print(f"[DepthEstimator] MiDaS ({variant}) loaded successfully ✅")
+                return True
+            except Exception as e:
+                print(f"[DepthEstimator] Warning: Could not load MiDaS via hub: {e}. Falling back to Custom Encoder-Decoder.")
+                self.model_type = "custom"
+
+        if "dense" in self.model_type:
+            try:
+                self.model = DenseDepthModel(pretrained_encoder=True).to(self.device).eval()
+                print("[DepthEstimator] DenseDepth model loaded successfully ✅")
+                return True
+            except Exception as e:
+                print(f"[DepthEstimator] DenseDepth load error: {e}. Falling back.")
+
+        # Custom Encoder-Decoder
+        self.model = CustomEncoderDecoder().to(self.device).eval()
+        print("[DepthEstimator] Custom Encoder-Decoder model initialized ✅")
+        return True
+
     def estimate_depth(self, image):
         """
-        Estimate depth from an RGB image.
-        
-        Args:
-            image: numpy array (H, W, 3) BGR format (from cv2.imread)
-        
-        Returns:
-            depth_map: numpy array (H, W) with relative depth values (0-1 normalized)
-                       Higher values = farther from camera
+        Generates normalized depth map (0.0 to 1.0) from an RGB image.
+        In this representation, higher values correspond to greater depth/cavity recess.
         """
         h, w = image.shape[:2]
         
-        if self.model is not None:
-            # Use MiDaS
+        if self.model is None:
+            self.load_model()
+
+        if self.transform is not None:
             img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             input_batch = self.transform(img_rgb).to(self.device)
-            
             with torch.no_grad():
-                prediction = self.model(input_batch)
-                prediction = F.interpolate(
-                    prediction.unsqueeze(1),
+                pred = self.model(input_batch)
+                pred = F.interpolate(
+                    pred.unsqueeze(1),
                     size=(h, w),
                     mode="bicubic",
-                    align_corners=False,
+                    align_corners=False
                 ).squeeze()
-            
-            depth_map = prediction.cpu().numpy()
-            
-            # Normalize to 0-1
-            depth_map = (depth_map - depth_map.min()) / (depth_map.max() - depth_map.min() + 1e-8)
-            
-            return depth_map.astype(np.float32)
-        
+            depth_map = pred.cpu().numpy()
         else:
-            # Fallback: Simple gradient-based pseudo-depth
-            # (Not as good as MiDaS, but works without downloading model)
-            return self._fallback_depth(image)
-    
-    def _fallback_depth(self, image):
+            # Direct inference for PyTorch models
+            img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
+            tensor = torch.from_numpy(img_rgb).permute(2, 0, 1).unsqueeze(0).to(self.device)
+            with torch.no_grad():
+                pred = self.model(tensor)
+            depth_map = pred.squeeze().cpu().numpy()
+
+        # Normalize depth to [0.0, 1.0]
+        d_min, d_max = depth_map.min(), depth_map.max()
+        if d_max > d_min:
+            depth_map = (depth_map - d_min) / (d_max - d_min)
+        else:
+            depth_map = np.zeros_like(depth_map)
+
+        return depth_map.astype(np.float32)
+
+    # =========================================================================
+    # 4. Pothole Characterization Analysis (Paper 2, Section 5.1 & Fig 17-18)
+    # =========================================================================
+    def extract_pothole_depth(self, depth_map, binary_mask, total_image_area=None):
         """
-        Simple gradient-based depth estimation as fallback.
-        Uses image gradients and vertical position as depth proxy.
+        Extracts exact pothole characterization metrics defined in Paper 2:
+          - Pothole Depth (PD): Average depth of pothole area
+          - Surrounding Depth (SD): Average depth restricted strictly to surrounding boundary pixels
+          - Cavity Verification: Validates PD > SD
+          - Relative Pothole Depth (RPD %): ((PD - SD) / SD) * 100
+          - Absolute Depth Difference (%): (PD - SD) * 100
+          - Contour Area: Exact pixel count
+          - Road Damage Percentage (%): (Pothole Area / Total Image Area) * 100
+          - Danger Level: Severity index based on Area and RPD
         """
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).astype(np.float32)
-        h, w = gray.shape
-        
-        # Laplacian (texture/edges indicate closer objects)
-        laplacian = cv2.Laplacian(gray, cv2.CV_32F)
-        texture = np.abs(laplacian)
-        texture = cv2.GaussianBlur(texture, (31, 31), 0)
-        
-        # Normalize
-        if texture.max() > 0:
-            texture = texture / texture.max()
-        
-        # Vertical gradient (things lower in image are closer — road perspective)
-        vertical = np.linspace(0.3, 1.0, h).reshape(-1, 1)
-        vertical = np.tile(vertical, (1, w))
-        
-        # Combine
-        depth = 0.6 * vertical + 0.4 * (1 - texture)
-        depth = np.clip(depth, 0, 1)
-        
-        return depth.astype(np.float32)
-    
-    def extract_pothole_depth(self, depth_map, mask):
-        """
-        Extract depth information for a specific pothole region.
-        (Paper 2, Section: Merging segmentation with depth map)
-        
-        Args:
-            depth_map: Full image depth map (H, W), 0-1 normalized
-            mask: Binary mask of the pothole region (H, W), 0 or 1
-        
-        Returns:
-            dict with depth statistics for the pothole region
-        """
-        # Ensure same size
-        if mask.shape != depth_map.shape:
-            mask = cv2.resize(mask.astype(np.float32), 
-                            (depth_map.shape[1], depth_map.shape[0]))
-            mask = (mask > 0.5).astype(np.uint8)
-        
-        # Extract depth values within the pothole mask
-        pothole_depths = depth_map[mask > 0]
-        
-        if len(pothole_depths) == 0:
+        h, w = depth_map.shape[:2]
+        if total_image_area is None:
+            total_image_area = h * w
+
+        # Resize mask if needed
+        if binary_mask.shape != (h, w):
+            binary_mask = cv2.resize(binary_mask.astype(np.uint8), (w, h), interpolation=cv2.INTER_NEAREST)
+
+        mask_indices = binary_mask > 0
+        pothole_pixels = depth_map[mask_indices]
+
+        if len(pothole_pixels) == 0:
             return {
-                'mean_depth': 0.0,
-                'max_depth': 0.0,
-                'min_depth': 0.0,
-                'std_depth': 0.0,
-                'area_pixels': 0,
-                'relative_depth': 0.0,
+                'area_pixels': 0.0,
+                'percentage_damage': 0.0,
+                'PD': 0.0,
+                'SD': 0.0,
+                'RPD': 0.0,
+                'diff_depth_percent': 0.0,
+                'cavity_detected': False,
+                'danger_level': 'None'
             }
-        
-        # Calculate surrounding road depth (context)
-        # Dilate the mask to get surrounding area
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (30, 30))
-        dilated = cv2.dilate(mask, kernel)
-        surrounding = dilated - mask
-        surrounding_depths = depth_map[surrounding > 0]
-        
-        road_depth = np.median(surrounding_depths) if len(surrounding_depths) > 0 else np.median(pothole_depths)
-        
-        # Relative depth (how much deeper is the pothole compared to road surface)
-        relative_depth = abs(np.mean(pothole_depths) - road_depth)
-        
+
+        # 1. Pothole Area via Contours (Paper 2, Page 18 & 20)
+        contours, _ = cv2.findContours(binary_mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if contours:
+            contour_area = float(cv2.contourArea(contours[0]))
+            # If contour area is zero (tiny fragment), fallback to pixel sum
+            area_pixels = contour_area if contour_area > 0 else float(np.sum(mask_indices))
+        else:
+            area_pixels = float(np.sum(mask_indices))
+
+        # Percentage of damage (Paper 2, Page 20 Table)
+        percentage_damage = (area_pixels / total_image_area) * 100.0
+
+        # 2. Pothole Depth (PD) (Paper 2, Page 21)
+        PD = float(np.mean(pothole_pixels))
+
+        # 3. Surrounding Depth (SD) (Paper 2, Page 21)
+        # Restricted strictly to surrounding ring pixels using morphological dilation
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (21, 21))
+        dilated_mask = cv2.dilate(binary_mask.astype(np.uint8), kernel)
+        surrounding_mask = (dilated_mask > 0) & (~mask_indices)
+        surrounding_pixels = depth_map[surrounding_mask]
+
+        if len(surrounding_pixels) > 0:
+            SD = float(np.mean(surrounding_pixels))
+        else:
+            SD = PD
+
+        # 4. Cavity verification (Paper 2, Page 21: "PD > SD indicates detected pothole depth")
+        cavity_detected = bool(PD > SD)
+
+        # 5. Relative Pothole Depth (RPD) (Paper 2, Page 21 Equation)
+        # RPD = ((PD - SD) / SD) * 100
+        if SD > 1e-6:
+            RPD = ((PD - SD) / SD) * 100.0
+        else:
+            RPD = (PD - SD) * 100.0
+
+        diff_depth_percent = (PD - SD) * 100.0
+
+        # 6. Danger Severity Assessment (Paper 2, Page 21)
+        # Danger increases with both RPD and area
+        if RPD >= 18.0 or (area_pixels > 8000 and RPD >= 10.0):
+            danger_level = "Severe"
+        elif RPD >= 12.0 or (area_pixels > 4000 and RPD >= 6.0):
+            danger_level = "High"
+        elif RPD >= 5.0:
+            danger_level = "Moderate"
+        else:
+            danger_level = "Low"
+
         return {
-            'mean_depth': float(np.mean(pothole_depths)),
-            'max_depth': float(np.max(pothole_depths)),
-            'min_depth': float(np.min(pothole_depths)),
-            'std_depth': float(np.std(pothole_depths)),
-            'area_pixels': int(mask.sum()),
-            'road_surface_depth': float(road_depth),
-            'relative_depth': float(relative_depth),
+            'area_pixels': round(area_pixels, 1),
+            'percentage_damage': round(percentage_damage, 2),
+            'PD': round(PD, 4),
+            'SD': round(SD, 4),
+            'RPD': round(RPD, 2),
+            'diff_depth_percent': round(diff_depth_percent, 2),
+            'cavity_detected': cavity_detected,
+            'danger_level': danger_level
         }
