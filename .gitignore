@@ -1,0 +1,33 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Large Datasets & Archives
+datasets/
+*.zip
+*.tar.gz
+*.tar
+
+# Training runs & checkpoints
+runs/
+results/
+*.pt
+*.pth
+*.onnx
+
+# Large PDF files (>30MB)
+Paper3.pdf
+
+# macOS artifacts
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Environment & IDE
+.env
+.venv/
+env/
+venv/
+.idea/
+.vscode/

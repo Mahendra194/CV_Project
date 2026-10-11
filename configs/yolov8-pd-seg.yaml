@@ -1,0 +1,54 @@
+# YOLOv8-PD-Seg Model Configuration
+# ===================================
+# Based on: YOLOv8n-seg (baseline)
+# Improvements from Paper 1: BOT, LSKA, C2fGhost
+# Improvements from Paper 2: Instance Segmentation (Proto + Mask)
+#
+# Usage with Ultralytics:
+#   from register_modules import register_custom_modules
+#   register_custom_modules()
+#   model = YOLO('configs/yolov8-pd-seg.yaml')
+
+# Parameters
+nc: 4  # number of classes: D00 (longitudinal), D10 (transverse), D20 (alligator), D40 (pothole)
+scales:
+  n: [0.33, 0.25, 1024]  # YOLOv8n scale: depth, width, max_channels
+
+# Backbone
+backbone:
+  # [from, repeats, module, args]
+  - [-1, 1, Conv, [64, 3, 2]]         # 0: /2  → 320×320
+  - [-1, 1, Conv, [128, 3, 2]]        # 1: /4  → 160×160
+  - [-1, 3, C2fGhost, [128, True]]    # 2
+  - [-1, 1, Conv, [256, 3, 2]]        # 3: /8  → 80×80
+  - [-1, 6, C2fGhost, [256, True]]    # 4: P3
+  - [-1, 1, Conv, [512, 3, 2]]        # 5: /16 → 40×40
+  - [-1, 6, C2fGhost, [512, True]]    # 6: P4
+  - [-1, 1, Conv, [1024, 3, 2]]       # 7: /32 → 20×20
+  - [-1, 3, C2fGhost, [1024, True]]   # 8: P5
+  - [-1, 1, SPPF, [1024, 5]]          # 9
+  - [-1, 1, BOTModule, [1024]]        # 10: Global context (Paper 1)
+
+# Neck (with C2fGhost from Paper 1)
+head:
+  - [-1, 1, nn.Upsample, [None, 2, 'nearest']]    # 11
+  - [[-1, 6], 1, Concat, [1]]                     # 12: cat P4
+  - [-1, 3, C2fGhost, [512]]                      # 13: td P4
+
+  - [-1, 1, nn.Upsample, [None, 2, 'nearest']]    # 14
+  - [[-1, 4], 1, Concat, [1]]                     # 15: cat P3
+  - [-1, 3, C2fGhost, [256]]                      # 16: Neck P3
+  - [-1, 1, LSKAModule, [256]]                    # 17: Attention (Paper 1)
+
+  - [-1, 1, Conv, [256, 3, 2]]                    # 18
+  - [[-1, 13], 1, Concat, [1]]                    # 19: cat P4
+  - [-1, 3, C2fGhost, [512]]                      # 20: Neck P4
+  - [-1, 1, LSKAModule, [512]]                    # 21: Attention (Paper 1)
+
+  - [-1, 1, Conv, [512, 3, 2]]                    # 22
+  - [[-1, 10], 1, Concat, [1]]                    # 23: cat P5
+  - [-1, 3, C2fGhost, [1024]]                     # 24: Neck P5
+  - [-1, 1, LSKAModule, [1024]]                   # 25: Attention (Paper 1)
+
+  # Segmentation Head
+  - [[17, 21, 25], 1, Segment, [nc, 32, 256]]     # 26: Segment(P3, P4, P5)

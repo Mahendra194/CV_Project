@@ -1,0 +1,18 @@
+# YOLOv8-PD-Seg Requirements
+# ===========================
+
+# Core
+ultralytics>=8.1.0     # YOLOv8 framework (includes PyTorch)
+torch>=2.0.0           # PyTorch
+torchvision>=0.15.0    # Vision utilities
+
+# Image processing
+opencv-python>=4.8.0   # cv2 for image/video processing
+Pillow>=10.0.0         # Image loading
+
+# Utilities
+numpy>=1.24.0          # Numerical computing
+matplotlib>=3.7.0      # Plotting
+pyyaml>=6.0            # YAML config parsing
+tqdm>=4.65.0           # Progress bars
+pandas>=2.0.0          # Data analysis
