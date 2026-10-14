@@ -23,7 +23,7 @@ Every diagnostic evaluation contains 4 synchronized panels:
 ### Scene 0: Dual Pothole Surface Cavities (New Test Scene)
 > **Description:** Roadway surface containing two distinct pothole cavities of varying sizes and depression depths.
 
-![Dual Pothole Surface Cavities](road_anomaly_showcase/sample0_dual_pothole_4panel.jpg)
+![Dual Pothole Surface Cavities](Pothole_Characterization_Images/1_Dual_Pothole_Characterization.jpg)
 
 * **Pothole #1 (Cyan Contour):**
   * **Contour Area:** $63,861\text{ pixels}$ ($10.88\%$ of road frame)
@@ -46,7 +46,7 @@ Every diagnostic evaluation contains 4 synchronized panels:
 ### Scene 1: Pothole Beside Vehicle Wheel
 > **Description:** Critical asphalt depression in the roadway right next to a passenger car's rear wheel.
 
-![Pothole Beside Vehicle Wheel](road_anomaly_showcase/sample1_car_pothole_4panel.jpg)
+![Pothole Beside Vehicle Wheel](Pothole_Characterization_Images/2_Car_Wheel_Pothole_Characterization.jpg)
 
 * **Contour Area:** $2,048.5\text{ pixels}$ ($1.27\%$ of frame area)
 * **Pothole Depth ($PD$):** $0.846$ | **Surrounding ($SD$):** $0.456$
@@ -59,7 +59,7 @@ Every diagnostic evaluation contains 4 synchronized panels:
 ### Scene 2: Rainwater-Filled Pothole (Puddle)
 > **Description:** Wet road surface featuring an unmistakable, water-filled circular cavity in the central lane.
 
-![Water-Filled Pothole](road_anomaly_showcase/sample2_water_pothole_4panel.jpg)
+![Water-Filled Pothole](Pothole_Characterization_Images/3_Water_Pothole_Characterization.jpg)
 
 * **Contour Area:** $3,573.0\text{ pixels}$ ($2.15\%$ of frame area)
 * **Pothole Depth ($PD$):** $0.895$ | **Surrounding ($SD$):** $0.591$
@@ -72,7 +72,7 @@ Every diagnostic evaluation contains 4 synchronized panels:
 ### Scene 3: Severe Longitudinal Road Fissure
 > **Description:** Deep longitudinal structural fracture splitting along the centerline of a paved asphalt roadway.
 
-![Longitudinal Road Fissure](road_anomaly_showcase/sample3_road_crack_4panel.jpg)
+![Longitudinal Road Fissure](Pothole_Characterization_Images/4_Road_Crack_Characterization.jpg)
 
 * **Contour Area:** $9,592.0\text{ pixels}$ ($5.76\%$ of road surface)
 * **Crack Depth ($PD$):** $0.414$ | **Surrounding ($SD$):** $0.293$
@@ -85,7 +85,7 @@ Every diagnostic evaluation contains 4 synchronized panels:
 ### Scene 4: Pothole Beside Traffic Lane Line
 > **Description:** Irregular aggregate pothole cavity located right on the edge of the white lane marking with moving traffic.
 
-![Traffic Lane Pothole](road_anomaly_showcase/sample4_traffic_pothole_4panel.jpg)
+![Traffic Lane Pothole](Pothole_Characterization_Images/5_Traffic_Pothole_Characterization.jpg)
 
 * **Contour Area:** $4,086.0\text{ pixels}$ ($2.44\%$ of frame area)
 * **Pothole Depth ($PD$):** $0.905$ | **Surrounding ($SD$):** $0.558$
@@ -110,7 +110,7 @@ Every diagnostic evaluation contains 4 synchronized panels:
 
 ## 🏆 3. Quantitative Performance Comparison: Base Paper vs Our Model
 
-![Base Paper vs Our Model Comparison](road_anomaly_showcase/base_paper_vs_our_model_comparison.jpg)
+![Base Paper vs Our Model Comparison](Base_Paper_vs_Our_Model_Comparisons/1_Benchmark_Accuracy_Comparison.jpg)
 
 ### Performance Benchmark Table
 
@@ -127,7 +127,7 @@ Every diagnostic evaluation contains 4 synchronized panels:
 
 ## 🧩 4. Architecture Improvements Breakdown
 
-![Architecture Improvements](road_anomaly_showcase/architecture_improvement_card.jpg)
+![Architecture Improvements](Base_Paper_vs_Our_Model_Comparisons/2_Architecture_Improvements_Card.jpg)
 
 1. **BoTNet Transformer (BOT Module):** Inherited from Base Paper. Multi-head self-attention replaces regular convolutions in the deep backbone, capturing global road context across varying lighting conditions.
 2. **Large Separable Kernel Attention (LSKA):** Inherited from Base Paper. Decomposes 2D large convolution kernels into 1D horizontal and vertical depth-wise operations, effectively detecting long continuous cracks with minimal computational cost.
