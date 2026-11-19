@@ -40,10 +40,8 @@
 \title{YOLOv8-PD-Seg: Unified Lightweight Road Damage Instance Segmentation and Monocular Depth-Based Pothole Characterization}
 
 \author{
-\IEEEauthorblockN{Divyam\IEEEauthorrefmark{1} and Mahendra\IEEEauthorrefmark{1}}
-\IEEEauthorblockA{\IEEEauthorrefmark{1}Department of Computer Science and Engineering\\
-\textit{Computer Vision Course Project}\\
-Email: \{divyam, mahendra\}@university.edu}
+\IEEEauthorblockN{Divyam and Mahendra}
+\IEEEauthorblockA{Department of Computer Science and Engineering}
 }
 
 \maketitle
@@ -334,10 +332,13 @@ RPD = \left(\frac{PD - SD}{SD}\right) \times 100\%
 
 \subsubsection{Hazard Severity Classification}
 \begin{equation}
+\label{eq:hazard}
 \text{Hazard} = \begin{cases}
-\textbf{Severe}, & RPD \geq 20\% \text{ or } (\text{Area}{>}5000 \wedge RPD{\geq}12\%) \\
-\textbf{High},   & 12\% \leq RPD < 20\% \text{ or } (\text{Area}{>}2500 \wedge RPD{\geq}8\%) \\
-\textbf{Moderate}, & 5\% \leq RPD < 12\% \\
+\textbf{Severe}, & RPD \geq 20\% \text{ or} \\
+                 & (\text{Area} > 5000 \wedge RPD \geq 12\%) \\[3pt]
+\textbf{High},   & 12\% \leq RPD < 20\% \text{ or} \\
+                 & (\text{Area} > 2500 \wedge RPD \geq 8\%) \\[3pt]
+\textbf{Moderate}, & 5\% \leq RPD < 12\% \\[3pt]
 \textbf{Low},    & RPD < 5\%
 \end{cases}
 \end{equation}
