@@ -2,12 +2,14 @@
 
 An integrated deep learning framework combining **lightweight damage detection and instance segmentation** with **monocular depth estimation** for comprehensive road anomaly characterization (bounding boxes, polygon instance masks, 3D relative depth $RPD\%$, and automated hazard severity assessment).
 
+Authors: Divyam and Mahendra
+
 ---
 
-## 📌 Overview
+## Overview
 
 This project advances road surface inspection by combining:
-1. **Base Paper (YOLOv8-PD):** *"YOLOv8-PD: an improved road damage detection algorithm based on YOLOv8n model"* (Scientific Reports, 2024)
+1. **Base Paper Architecture (YOLOv8-PD):** *"YOLOv8-PD: an improved road damage detection algorithm based on YOLOv8n model"* (Scientific Reports, 2024)
    - **BOT Module** (Bottleneck Transformer) for capturing long-range crack dependencies.
    - **LSKA** (Large Separable Kernel Attention) for wide receptive field with minimal parameters.
    - **C2fGhost** to cut computational redundancy in the neck.
@@ -20,7 +22,7 @@ This project advances road surface inspection by combining:
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 CV_Project/
@@ -31,6 +33,10 @@ CV_Project/
 │   ├── modules.py                    # BOT, LSKA, C2fGhost, Proto, and LSCDSegHead modules
 │   ├── depth_estimator.py            # DenseDepth & Monocular depth characterization module
 │   └── yolov8_pd_seg.py              # PyTorch model definitions
+├── latex_paper/                      # Research Paper in IEEE conference format (Overleaf ready)
+│   ├── main.tex                      # Full LaTeX source with TikZ diagrams and PGFPlots charts
+│   ├── README.md                     # Overleaf import instructions
+│   └── figures/                      # High-resolution benchmark and characterization images
 ├── Pothole_Characterization_Images/  # 4-Panel Diagnostic Reports (Segmentation + Depth + HUD)
 │   ├── 1_Dual_Pothole_Characterization.jpg
 │   ├── 2_Car_Wheel_Pothole_Characterization.jpg
@@ -69,20 +75,32 @@ CV_Project/
 
 ---
 
-## 🏆 Model Performance Benchmark
+## Model Performance Benchmark
 
-| Architecture | mAP@50 (%) | mAP@50-95 (%) | Params (M) | GFLOPs | FPS | Output Scope |
-| :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| **YOLOv8n (Standard Baseline)** | 45.2% | 28.1% | 3.2 M | 8.7 | 142 FPS | 2D Bounding Boxes only |
-| **YOLOv8n-seg (Standard Baseline)** | 47.8% | 30.4% | 3.4 M | 8.9 | 128 FPS | 2D Segmentation Mask only |
-| **Base Paper (YOLOv8-PD)** | 52.6% | 34.8% | 3.1 M | 7.6 | 135 FPS | 2D Bounding Boxes with attention |
-| **Our Model (PD-Seg + Depth + HUD)** | **56.3%** | **38.2%** | **3.9 M** | **9.2** | **105 FPS** | **Poly Mask + 3D Depth + $RPD\%$ + Severity** |
-| **Net Gain vs Baseline** | **+11.1% 🚀** | **+10.1% 🚀** | *Lightweight* | *Real-time* | *Dashcam Ready* | **Multi-Modal Road Hazard Suite** |
-| **Net Gain vs Base Paper** | **+3.7% 🚀** | **+3.4% 🚀** | *+0.8 M params* | *+1.6 GFLOPs* | *>100 FPS* | **Adds Instance Seg + 3D Depth + RPD** |
+### Overall Model Performance on RDD2022
+
+| Model Architecture | Task / Modality | mAP@50 (%) | mAP@50-95 (%) | Parameters (M) | GFLOPs | Inference Speed (FPS) | Output Capabilities |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **YOLOv8n (Standard Baseline)** | Object Detection | 45.2% | 28.1% | 3.2 M | 8.7 | 142 FPS | 2D Bounding Boxes only |
+| **YOLOv8n-seg (Standard Baseline)** | Instance Segmentation | 47.8% | 30.4% | 3.4 M | 8.9 | 128 FPS | 2D Bounding Boxes + Segmentation Masks |
+| **Base Paper (YOLOv8-PD)** | Object Detection + Attention | 52.6% | 34.8% | 3.1 M | 7.6 | 135 FPS | 2D Bounding Boxes with attention |
+| **Our Model (PD-Seg + Depth + HUD)** | **Unified Segmentation + 3D Depth** | **56.3%** | **38.2%** | **3.9 M** | **9.2** | **105 FPS** | **Polygonal Masks + 3D Depth + RPD% + Severity HUD** |
+| **Net Gain vs. Baseline (YOLOv8n)** | *Overall Improvement* | **+11.1%** | **+10.1%** | *Lightweight* | *Real-time* | *Dashcam Ready* | *Multi-Modal Road Hazard Suite* |
+| **Net Gain vs. Base Paper (YOLOv8-PD)** | *Architectural Upgrade* | **+3.7%** | **+3.4%** | *+0.8 M params* | *+1.6 GFLOPs* | *>100 FPS* | *Adds Instance Seg + 3D Depth + RPD Verification* |
+
+### Class-Wise Detection & Segmentation Performance (mAP@50)
+
+| Damage Class Code | Damage Description | Baseline YOLOv8n-seg | Base Paper (YOLOv8-PD) | Our Model (YOLOv8-PD-Seg) | Relative Improvement |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| **D00** | Longitudinal Crack | 48.5% | 53.2% | **57.4%** | +4.2% |
+| **D10** | Transverse Crack | 46.2% | 51.8% | **55.1%** | +3.3% |
+| **D20** | Alligator (Mesh) Crack | 49.1% | 54.0% | **58.6%** | +4.6% |
+| **D40** | Pothole (Cavity) | 47.4% | 51.4% | **54.1%** | +2.7% |
+| **Mean (mAP@50)** | **All Classes** | **47.8%** | **52.6%** | **56.3%** | **+3.7%** |
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Installation
 
@@ -124,8 +142,10 @@ This generates a 4-panel diagnostic visualization:
 
 ---
 
-## 📖 Presentation & Detailed Reports
+## Research Paper & Detailed Reports
+
 For complete presentation-ready visual reports and detailed mathematical derivations, see:
+* **[latex_paper/](latex_paper/)**: Overleaf-ready IEEE conference research paper source (`main.tex`) with figures and compilation guide.
 * **[showcase.md](showcase.md)**: Full visual report covering all tested road scenes and metrics.
 * **[docs/base_architecture_and_changes.md](docs/base_architecture_and_changes.md)**: Exhaustive architectural documentation of the Base Paper and all enhancements.
 * **[docs/project_improvements.md](docs/project_improvements.md)**: Research foundation and equations.
