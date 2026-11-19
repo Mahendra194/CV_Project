@@ -1,4 +1,4 @@
-# 📚 Comprehensive Research, Architecture & Mathematical Foundations
+# Comprehensive Research, Architecture & Mathematical Foundations
 ## YOLOv8-PD-Seg: Unified Road Damage Segmentation and Pothole Characterization
 
 This document provides an exhaustive, mathematically rigorous, and architectural breakdown of:
@@ -346,7 +346,7 @@ class LSCDSegHead(nn.Module):
         )
         self.cls_head = nn.Conv2d(in_channels, num_classes, 1)
         self.reg_head = nn.Conv2d(in_channels, 4 * reg_max, 1)
-        self.mask_head = nn.Conv2d(in_channels, num_protos, 1)  # ⭐ Novel Mask Branch
+        self.mask_head = nn.Conv2d(in_channels, num_protos, 1)  # Novel Mask Branch
 
     def forward(self, x):
         feat = self.shared_conv(x)
@@ -360,17 +360,17 @@ class LSCDSegHead(nn.Module):
 | Architectural Feature | Baseline YOLOv8n | Paper 1 (YOLOv8-PD) | Paper 2 (Characterization) | **Our Unified Model** |
 | :--- | :---: | :---: | :---: | :---: |
 | **Primary Task** | Bounding Box Detection | Bounding Box Detection | Segmentation + Depth | **Segmentation + Depth** |
-| **Backbone Global Attention** | ❌ None | **BOT (Self-Attention)** | ❌ None | **BOT (Self-Attention)** |
-| **Large Receptive Field Attention**| ❌ Local 3×3 | **LSKA ($19\times 19$ ERF)** | ❌ None | **LSKA ($19\times 19$ ERF)** |
+| **Backbone Global Attention** | None | **BOT (Self-Attention)** | None | **BOT (Self-Attention)** |
+| **Large Receptive Field Attention**| No Local 3×3 | **LSKA ($19\times 19$ ERF)** | None | **LSKA ($19\times 19$ ERF)** |
 | **Neck Computational Optimization**| Standard C2f | **C2fGhost ($\approx 50\%$ FLOPs)** | Standard C2f | **C2fGhost ($\approx 50\%$ FLOPs)** |
 | **Prediction Head** | Decoupled Conv | **LSCD (Shared Conv)** | Standard Segment Head | **LSCD-Seg Head (Shared+Mask)** |
-| **Instance Segmentation** | ❌ No | ❌ No | ✅ Yes (Standard) | **✅ Yes (Improved Arch)** |
-| **Monocular Depth Engine** | ❌ No | ❌ No | ✅ DenseDepth / Custom | **✅ DenseDepth / MiDaS / Custom** |
-| **Contour Area Calculation** | ❌ No | ❌ No | ✅ Yes | **✅ Yes ($\oint \text{contour}$)** |
-| **Road Damage Percentage ($\%$)** | ❌ No | ❌ No | ✅ Yes | **✅ Yes (Table Page 20)** |
-| **Cavity Validation ($PD > SD$)** | ❌ No | ❌ No | ✅ Yes | **✅ Yes (Section 5.1)** |
-| **Relative Depth ($RPD$)** | ❌ No | ❌ No | ✅ Yes | **✅ Yes ($\frac{PD-SD}{SD} \times 100$)** |
-| **Hazard Severity Classification** | ❌ No | ❌ No | ✅ Yes | **✅ Yes (Severe/High/Mod)** |
+| **Instance Segmentation** | No | No | Yes (Standard) | **Yes (Improved Arch)** |
+| **Monocular Depth Engine** | No | No | Yes DenseDepth / Custom | **Yes DenseDepth / MiDaS / Custom** |
+| **Contour Area Calculation** | No | No | Yes | **Yes ($\oint \text{contour}$)** |
+| **Road Damage Percentage ($\%$)** | No | No | Yes | **Yes (Table Page 20)** |
+| **Cavity Validation ($PD > SD$)** | No | No | Yes | **Yes (Section 5.1)** |
+| **Relative Depth ($RPD$)** | No | No | Yes | **Yes ($\frac{PD-SD}{SD} \times 100$)** |
+| **Hazard Severity Classification** | No | No | Yes | **Yes (Severe/High/Mod)** |
 
 ---
 

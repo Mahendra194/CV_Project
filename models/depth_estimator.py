@@ -218,7 +218,7 @@ class DepthEstimator:
                 self.model.to(self.device).eval()
                 midas_transforms = torch.hub.load("intel-isl/MiDaS", "transforms", trust_repo=True)
                 self.transform = midas_transforms.small_transform if variant == "MiDaS_small" else midas_transforms.dpt_transform
-                print(f"[DepthEstimator] MiDaS ({variant}) loaded successfully ✅")
+                print(f"[DepthEstimator] MiDaS ({variant}) loaded successfully [OK]")
                 return True
             except Exception as e:
                 print(f"[DepthEstimator] Warning: Could not load MiDaS via hub: {e}. Falling back to Custom Encoder-Decoder.")
@@ -227,14 +227,14 @@ class DepthEstimator:
         if "dense" in self.model_type:
             try:
                 self.model = DenseDepthModel(pretrained_encoder=True).to(self.device).eval()
-                print("[DepthEstimator] DenseDepth model loaded successfully ✅")
+                print("[DepthEstimator] DenseDepth model loaded successfully [OK]")
                 return True
             except Exception as e:
                 print(f"[DepthEstimator] DenseDepth load error: {e}. Falling back.")
 
         # Custom Encoder-Decoder
         self.model = CustomEncoderDecoder().to(self.device).eval()
-        print("[DepthEstimator] Custom Encoder-Decoder model initialized ✅")
+        print("[DepthEstimator] Custom Encoder-Decoder model initialized [OK]")
         return True
 
     def estimate_depth(self, image):

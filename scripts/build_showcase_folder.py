@@ -129,7 +129,7 @@ def generate_sample0():
 
     out_p = SHOWCASE_DIR / "sample0_dual_pothole_4panel.jpg"
     cv2.imwrite(str(out_p), grid)
-    print(f"  ✅ Sample 0 (Dual Pothole) saved to {out_p}")
+    print(f"  [OK] Sample 0 (Dual Pothole) saved to {out_p}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -204,7 +204,7 @@ def generate_sample1():
 
     out_p = SHOWCASE_DIR / "sample1_car_pothole_4panel.jpg"
     cv2.imwrite(str(out_p), grid)
-    print(f"  ✅ Sample 1 saved to {out_p}")
+    print(f"  [OK] Sample 1 saved to {out_p}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -278,7 +278,7 @@ def generate_sample2():
 
     out_p = SHOWCASE_DIR / "sample2_water_pothole_4panel.jpg"
     cv2.imwrite(str(out_p), grid)
-    print(f"  ✅ Sample 2 saved to {out_p}")
+    print(f"  [OK] Sample 2 saved to {out_p}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -351,7 +351,7 @@ def generate_sample3():
 
     out_p = SHOWCASE_DIR / "sample3_road_crack_4panel.jpg"
     cv2.imwrite(str(out_p), grid)
-    print(f"  ✅ Sample 3 saved to {out_p}")
+    print(f"  [OK] Sample 3 saved to {out_p}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -425,7 +425,7 @@ def generate_sample4():
 
     out_p = SHOWCASE_DIR / "sample4_traffic_pothole_4panel.jpg"
     cv2.imwrite(str(out_p), grid)
-    print(f"  ✅ Sample 4 saved to {out_p}")
+    print(f"  [OK] Sample 4 saved to {out_p}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -514,7 +514,7 @@ def generate_comparison_chart():
 
     out_p = SHOWCASE_DIR / "base_paper_vs_our_model_comparison.jpg"
     cv2.imwrite(str(out_p), chart)
-    print(f"  ✅ Benchmark Comparison saved to {out_p}")
+    print(f"  [OK] Benchmark Comparison saved to {out_p}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -572,12 +572,12 @@ def generate_architecture_card():
 
     out_p = SHOWCASE_DIR / "architecture_improvement_card.jpg"
     cv2.imwrite(str(out_p), card)
-    print(f"  ✅ Architecture Card saved to {out_p}")
+    print(f"  [OK] Architecture Card saved to {out_p}")
 
 
 if __name__ == "__main__":
     print("=" * 75)
-    print("  🚀 BUILDING FINAL SHOWCASE FOLDER (NO MENTION OF PAPER 2)")
+    print("   BUILDING FINAL SHOWCASE FOLDER (NO MENTION OF PAPER 2)")
     print("=" * 75)
 
     generate_sample0()
@@ -589,5 +589,5 @@ if __name__ == "__main__":
     generate_architecture_card()
 
     print("\n" + "=" * 75)
-    print(f"  ✅ ALL ASSETS GENERATED IN: {SHOWCASE_DIR}/")
+    print(f"  [OK] ALL ASSETS GENERATED IN: {SHOWCASE_DIR}/")
     print("=" * 75)

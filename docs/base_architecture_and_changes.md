@@ -1,4 +1,4 @@
-# 🏗️ Base Architecture (YOLOv8-PD) & Our Comprehensive Improvements
+# Base Architecture (YOLOv8-PD) & Our Comprehensive Improvements
 
 This document provides a thorough, layer-by-layer architectural explanation of:
 1. **The Base Architecture (Paper 1):** *YOLOv8-PD: An improved road damage detection algorithm based on YOLOv8n model* (Nature Scientific Reports, 2024).
@@ -122,7 +122,7 @@ To solve this, Zeng & Zhong (2024) developed **YOLOv8-PD**, replacing standard Y
 * **Accuracy:** mAP@50 reached **70.6%** (+1.4% improvement over baseline YOLOv8n)
 * **Inference Speed:** **111.9 FPS** on desktop GPU
 
-#### ⚠️ Critical Limitations Acknowledged in the Base Paper:
+#### Critical Limitations Acknowledged in the Base Paper:
 1. **Bounding-Box-Only Output:** The base model can only output rectangular boxes $[x, y, w, h]$. It cannot output pixel-accurate polygons for jagged cracks or pothole perimeters.
 2. **Poor Performance on Potholes (D40):** The authors specifically noted in Section 5 (Page 11–12):
    > *"Among all road crack targets, D40 (potholes) has the lowest detection accuracy (53.1%)... the algorithm has the problem of missed detection in multi-hole and small-hole scenes... This provides an improved space for subsequent algorithms."*
@@ -161,23 +161,23 @@ Here is the exact, comprehensive breakdown of what we changed:
 │  • Bottom-Up PAN with C2fGhost          │             │                                         │
 │  • LSKA Attention at P3, P4, P5         │             │                                         │
 │                  │                      │             │                                         │
-│  ⭐⭐ CHANGE 1: ADDED PROTOMODULE ⭐⭐ │             │                                         │
+│   CHANGE 1: ADDED PROTOMODULE  │             │                                         │
 │  • P3 (80×80) ──► Proto Module          │             │                                         │
 │  • Generates 32 Prototype Masks (P_k)   │             │                                         │
 │                  │                      │             │                                         │
-│  ⭐⭐ CHANGE 2: NEW LSCD-SEG-HEAD ⭐⭐  │             │                                         │
+│   CHANGE 2: NEW LSCD-SEG-HEAD   │             │                                         │
 │  • Replaced 2-branch LSCD-Head with     │             │                                         │
 │    3-branch LSCD-Seg-Head:              │             │                                         │
 │    1. Class Logits (C classes)          │             │                                         │
 │    2. Bounding Box Reg (4 × reg_max)    │             │                                         │
-│    3. ⭐ 32 Mask Coefficients (C_i)     │             │                                         │
+│    3.  32 Mask Coefficients (C_i)     │             │                                         │
 └──────────────────┬──────────────────────┘             └───────────────────┬─────────────────────┘
                    │                                                        │
           Instance Masks M_i(x,y)                                 Depth Map D(x,y)
                    │                                                        │
                    └──────────────────────────┬─────────────────────────────┘
                                               ▼
-                        ⭐⭐ CHANGE 3: INTEGRATED CHARACTERIZATION ⭐⭐
+                         CHANGE 3: INTEGRATED CHARACTERIZATION 
                         • Pothole Contour Area: Area = ∮ contour(x,y) dx dy
                         • Total Road Damage %: (∑ Area / Image Area) × 100
                         • Pothole Depth (PD) vs Surrounding Depth (SD)
@@ -191,7 +191,7 @@ Here is the exact, comprehensive breakdown of what we changed:
 
 ### 2.1 Detailed Explanation of Our 5 Core Changes
 
-#### ⭐ CHANGE 1: Replaced LSCD-Head with LSCD-Seg-Head
+####  CHANGE 1: Replaced LSCD-Head with LSCD-Seg-Head
 * **What Base Paper Had:**
   Base Paper 1's `LSCD-Head` had only two output branches:
   1. Classification branch $\to$ damage category ($D00, D10, D20, D40$).
@@ -206,7 +206,7 @@ Here is the exact, comprehensive breakdown of what we changed:
 
 ---
 
-#### ⭐ CHANGE 2: Added ProtoModule (Prototype Mask Generator)
+####  CHANGE 2: Added ProtoModule (Prototype Mask Generator)
 * **What Base Paper Had:**
   Base Paper 1 had **zero mask generation capability**.
 * **What We Changed in Code (`models/modules.py` & `configs/yolov8-pd-seg.yaml`):**
@@ -232,7 +232,7 @@ Here is the exact, comprehensive breakdown of what we changed:
 
 ---
 
-#### ⭐ CHANGE 3: Dataset Conversion Pipeline (`prepare_dataset.py`)
+####  CHANGE 3: Dataset Conversion Pipeline (`prepare_dataset.py`)
 * **What Base Paper Had:**
   Paper 1 trained on RDD2022's raw XML annotations, which contain only bounding boxes:
   `<bndbox><xmin>...</xmin><ymin>...</ymin><xmax>...</xmax><ymax>...</ymax></bndbox>`.
@@ -246,7 +246,7 @@ Here is the exact, comprehensive breakdown of what we changed:
 
 ---
 
-#### ⭐ CHANGE 4: Added Monocular Depth Estimation Engine (`models/depth_estimator.py`)
+####  CHANGE 4: Added Monocular Depth Estimation Engine (`models/depth_estimator.py`)
 * **What Base Paper Had:**
   Paper 1 had **no depth estimation or 3D elevation comprehension whatsoever**.
 * **What We Changed in Code (`models/depth_estimator.py`):**
@@ -257,7 +257,7 @@ Here is the exact, comprehensive breakdown of what we changed:
 
 ---
 
-#### ⭐ CHANGE 5: Built Pothole Characterization Pipeline (`characterize_potholes.py`)
+####  CHANGE 5: Built Pothole Characterization Pipeline (`characterize_potholes.py`)
 * **What Base Paper Had:**
   Paper 1 only printed: *"D40 detected at [120, 200, 300, 410]"*.
 * **What We Changed in Code (`characterize_potholes.py`):**
@@ -295,12 +295,12 @@ Here is the exact, comprehensive breakdown of what we changed:
 | **Backbone/Neck LSKA** | Preserved ($19 \times 19$ Attention) | **Preserved ($19 \times 19$ Attention)** | Expands effective receptive field with minimal parameter cost. | Retains Paper 1's large receptive field. |
 | **Neck Feature Fusion** | C2fGhost Blocks | **C2fGhost Blocks** | Cuts ~50% computational FLOPs in the neck. | Keeps inference fast and lightweight. |
 | **Prediction Head** | LSCD-Head (2 branches: Cls + BBox) | **LSCD-Seg-Head (3 branches: Cls + BBox + Mask Coeffs)** | Instance segmentation requires coefficients to weight prototype masks. | Outputs 32 mask coefficients per instance without separate heavy decoders. |
-| **Mask Prototype Generator**| ❌ None | **ProtoModule (P3 scale, 32 prototypes)** | Required to synthesize instance masks via linear combination. | Real-time pixel-level masks at $160 \times 160$ resolution. |
+| **Mask Prototype Generator**| None | **ProtoModule (P3 scale, 32 prototypes)** | Required to synthesize instance masks via linear combination. | Real-time pixel-level masks at $160 \times 160$ resolution. |
 | **Dataset Annotations** | Bounding Boxes ($[x, y, w, h]$) | **Polygon Segmentation Contours** | Segmentation training requires polygon vertex lists. | Enables training on RDD2022 with mask supervision. |
-| **Depth Perception** | ❌ None | **DenseDepth / Custom Enc-Dec / MiDaS Engine** | Cannot assess damage severity without 3D cavity depth. | Yields normalized per-pixel depth map $D(x, y) \in [0, 1]$. |
-| **Geometric Metrics** | ❌ None | **Contour Area + Road Damage Percentage** | Civil authorities require damaged area quantification for repair cost estimation. | Exact pixel area and road surface percentage. |
-| **Elevation Metrics** | ❌ None | **Pothole Depth ($PD$) vs Surrounding ($SD$)** | Optical darkness does not equal physical depression. | Confirms cavity depression ($PD > SD$). |
-| **Hazard Metric** | ❌ None | **Relative Pothole Depth ($RPD$) + Hazard Grade** | Classifies whether a pothole is minor or severe. | $RPD = \frac{PD - SD}{SD} \times 100$ and 4-tier hazard rating. |
+| **Depth Perception** | None | **DenseDepth / Custom Enc-Dec / MiDaS Engine** | Cannot assess damage severity without 3D cavity depth. | Yields normalized per-pixel depth map $D(x, y) \in [0, 1]$. |
+| **Geometric Metrics** | None | **Contour Area + Road Damage Percentage** | Civil authorities require damaged area quantification for repair cost estimation. | Exact pixel area and road surface percentage. |
+| **Elevation Metrics** | None | **Pothole Depth ($PD$) vs Surrounding ($SD$)** | Optical darkness does not equal physical depression. | Confirms cavity depression ($PD > SD$). |
+| **Hazard Metric** | None | **Relative Pothole Depth ($RPD$) + Hazard Grade** | Classifies whether a pothole is minor or severe. | $RPD = \frac{PD - SD}{SD} \times 100$ and 4-tier hazard rating. |
 | **Visual Output** | Standard bounding boxes | **4-Panel Diagnostic HUD Visualization** | Engineers need a multi-modal inspection display. | Side-by-side: Image + Mask + Depth + Metrics HUD. |
 
 ---

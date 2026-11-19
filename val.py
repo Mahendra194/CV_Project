@@ -132,8 +132,8 @@ def print_comparison(results):
         if b_val is not None and i_val is not None:
             diff = i_val - b_val
             sign = '+' if diff >= 0 else ''
-            emoji = '✅' if diff > 0 else ('⚠️' if diff == 0 else '❌')
-            print(f"  {display_name:<23} {b_val:.4f}        {i_val:.4f}        {sign}{diff:.4f} {emoji}")
+            status_indicator = '[+]' if diff > 0 else ('[=]' if diff == 0 else '[-]')
+            print(f"  {display_name:<23} {b_val:.4f}        {i_val:.4f}        {sign}{diff:.4f} {status_indicator}")
         elif i_val is not None:
             print(f"  {display_name:<23} {'N/A':<14} {i_val:.4f}")
         elif b_val is not None:

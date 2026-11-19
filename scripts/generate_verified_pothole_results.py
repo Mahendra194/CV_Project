@@ -245,7 +245,7 @@ def generate_verified_4panel(item):
 
     img = cv2.imread(img_path)
     if img is None:
-        print(f"  ❌ Cannot open {img_path}")
+        print(f"  [FAIL] Cannot open {img_path}")
         return None
 
     h, w = img.shape[:2]
@@ -254,7 +254,7 @@ def generate_verified_4panel(item):
     # 1. Extract accurate pothole masks
     potholes, combined_mask = extract_accurate_pothole_masks(img, lbl_path)
     if not potholes:
-        print(f"  ⚠️ No potholes parsed for {name}")
+        print(f"  [WARN] No potholes parsed for {name}")
         return None
 
     # 2. Generate calibrated depth map
@@ -326,7 +326,7 @@ def generate_verified_4panel(item):
 
     out_file = OUTPUT_DIR / f"{name}_4panel.jpg"
     cv2.imwrite(str(out_file), grid)
-    print(f"  ✅ Saved: {out_file.name} | Potholes={len(analyzed_potholes)} | Max RPD={worst['RPD']}% | Hazard={worst['danger']}")
+    print(f"  [OK] Saved: {out_file.name} | Potholes={len(analyzed_potholes)} | Max RPD={worst['RPD']}% | Hazard={worst['danger']}")
 
     return {
         'name': name,
@@ -419,13 +419,13 @@ def generate_benchmark_chart():
 
     out_chart = OUTPUT_DIR / "benchmark_accuracy_comparison.jpg"
     cv2.imwrite(str(out_chart), chart)
-    print(f"  ✅ Saved benchmark chart: {out_chart.name}")
+    print(f"  [OK] Saved benchmark chart: {out_chart.name}")
     return out_chart
 
 
 if __name__ == "__main__":
     print("=" * 75)
-    print("  🎯 GENERATING VERIFIED POTHOLE RESULTS & BENCHMARKS (Paper 1 + 2)")
+    print("   GENERATING VERIFIED POTHOLE RESULTS & BENCHMARKS (Paper 1 + 2)")
     print("=" * 75)
 
     results = []
@@ -434,11 +434,11 @@ if __name__ == "__main__":
         if res:
             results.append(res)
 
-    print("\n📊 Generating Benchmark Comparison Chart...")
+    print("\n Generating Benchmark Comparison Chart...")
     generate_benchmark_chart()
 
     print("\n" + "=" * 75)
-    print("  📋 VERIFIED POTHOLE SUMMARY TABLE")
+    print("   VERIFIED POTHOLE SUMMARY TABLE")
     print("=" * 75)
     header = f"{'Sample':<30} | {'Country':<8} | {'Potholes':<8} | {'Area (px)':<10} | {'PD':<7} | {'SD':<7} | {'RPD (%)':<8} | {'Hazard':<8}"
     print(header)
@@ -447,4 +447,4 @@ if __name__ == "__main__":
         w = r['worst']
         print(f"{r['name']:<30} | {r['country']:<8} | {len(r['potholes']):<8} | {w['area']:<10.1f} | {w['PD']:<7.3f} | {w['SD']:<7.3f} | {w['RPD']:<8.1f} | {w['danger']:<8}")
     print("-" * len(header))
-    print(f"\n✅ All outputs saved to: {OUTPUT_DIR}/")
+    print(f"\n[OK] All outputs saved to: {OUTPUT_DIR}/")

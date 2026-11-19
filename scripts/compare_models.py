@@ -236,7 +236,7 @@ def run_single_model(model_type, image_path, conf=0.25, imgsz=640):
     # Print stats
     print(f"\n  Results:")
     print(f"    Detections:     {stats['detections']}")
-    print(f"    Has Masks:      {'Yes ✅' if stats['has_masks'] else 'No ❌'}")
+    print(f"    Has Masks:      {'Yes' if stats['has_masks'] else 'No'}")
     print(f"    Mask Area:      {stats['total_mask_area']} pixels")
     print(f"    Avg Confidence: {stats['avg_confidence']:.2%}")
     print(f"    Classes Found:  {', '.join(stats['classes_found']) or 'None'}")
@@ -356,7 +356,7 @@ Examples:
     else:
         run_single_model(args.model, str(image_path), args.conf, args.imgsz)
 
-    print("[DONE] ✅")
+    print("[DONE] [OK]")
 
 
 if __name__ == '__main__':

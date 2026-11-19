@@ -164,7 +164,7 @@ def process_sample1():
 
     out_path = OUTPUT_DIR / "sample1_car_pothole_4panel.jpg"
     cv2.imwrite(str(out_path), grid)
-    print(f"  ✅ Sample 1 Processed: Area={stats['area']}px, RPD={stats['RPD']}%, Hazard={stats['danger']}")
+    print(f"  [OK] Sample 1 Processed: Area={stats['area']}px, RPD={stats['RPD']}%, Hazard={stats['danger']}")
     return stats, out_path
 
 
@@ -234,7 +234,7 @@ def process_sample2():
 
     out_path = OUTPUT_DIR / "sample2_water_pothole_4panel.jpg"
     cv2.imwrite(str(out_path), grid)
-    print(f"  ✅ Sample 2 Processed: Area={stats['area']}px, RPD={stats['RPD']}%, Hazard={stats['danger']}")
+    print(f"  [OK] Sample 2 Processed: Area={stats['area']}px, RPD={stats['RPD']}%, Hazard={stats['danger']}")
     return stats, out_path
 
 
@@ -303,7 +303,7 @@ def process_sample3():
 
     out_path = OUTPUT_DIR / "sample3_road_crack_4panel.jpg"
     cv2.imwrite(str(out_path), grid)
-    print(f"  ✅ Sample 3 Processed: Area={stats['area']}px, RPD={stats['RPD']}%, Hazard={stats['danger']}")
+    print(f"  [OK] Sample 3 Processed: Area={stats['area']}px, RPD={stats['RPD']}%, Hazard={stats['danger']}")
     return stats, out_path
 
 
@@ -373,7 +373,7 @@ def process_sample4():
 
     out_path = OUTPUT_DIR / "sample4_traffic_pothole_4panel.jpg"
     cv2.imwrite(str(out_path), grid)
-    print(f"  ✅ Sample 4 Processed: Area={stats['area']}px, RPD={stats['RPD']}%, Hazard={stats['danger']}")
+    print(f"  [OK] Sample 4 Processed: Area={stats['area']}px, RPD={stats['RPD']}%, Hazard={stats['danger']}")
     return stats, out_path
 
 
@@ -382,7 +382,7 @@ def process_sample4():
 # ═══════════════════════════════════════════════════════════════════════════════
 if __name__ == "__main__":
     print("=" * 75)
-    print("  🚀 PROCESSING USER-PROVIDED POTHOLE & ROAD DAMAGE IMAGES")
+    print("   PROCESSING USER-PROVIDED POTHOLE & ROAD DAMAGE IMAGES")
     print("=" * 75)
 
     s1, p1 = process_sample1()
@@ -391,7 +391,7 @@ if __name__ == "__main__":
     s4, p4 = process_sample4()
 
     print("\n" + "=" * 75)
-    print("  📋 FINAL RESULTS SUMMARY TABLE (USER IMAGES)")
+    print("   FINAL RESULTS SUMMARY TABLE (USER IMAGES)")
     print("=" * 75)
     header = f"{'Sample':<32} | {'Damage Class':<16} | {'Area (px)':<10} | {'PD':<7} | {'SD':<7} | {'RPD (%)':<8} | {'Hazard':<8}"
     print(header)
@@ -401,4 +401,4 @@ if __name__ == "__main__":
     print(f"{'Sample 3 (Long Fissure)':<32} | {'D00 Road Crack':<16} | {s3['area']:<10.1f} | {s3['PD']:<7.3f} | {s3['SD']:<7.3f} | {s3['RPD']:<8.1f} | {s3['danger']:<8}")
     print(f"{'Sample 4 (Traffic Pothole)':<32} | {'D40 Pothole':<16} | {s4['area']:<10.1f} | {s4['PD']:<7.3f} | {s4['SD']:<7.3f} | {s4['RPD']:<8.1f} | {s4['danger']:<8}")
     print("-" * len(header))
-    print(f"\n✅ All 4-panel visual reports saved to: {OUTPUT_DIR}/")
+    print(f"\n[OK] All 4-panel visual reports saved to: {OUTPUT_DIR}/")

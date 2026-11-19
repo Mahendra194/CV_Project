@@ -182,7 +182,7 @@ def generate_4panel(img_path, output_path, sample_id=1):
     """Generate a Paper 2-style 4-panel characterization visualization."""
     img = cv2.imread(str(img_path))
     if img is None:
-        print(f"  ⚠️ Could not read {img_path}")
+        print(f"  [WARN] Could not read {img_path}")
         return None
 
     h, w = img.shape[:2]
@@ -265,7 +265,7 @@ def generate_4panel(img_path, output_path, sample_id=1):
     grid = np.vstack((top, bottom))
 
     cv2.imwrite(str(output_path), grid)
-    print(f"  ✅ Sample {sample_id}: {output_path.name} ({len(detections)} detections, {len(pothole_records)} potholes)")
+    print(f"  [OK] Sample {sample_id}: {output_path.name} ({len(detections)} detections, {len(pothole_records)} potholes)")
 
     return pothole_records
 
@@ -395,7 +395,7 @@ def generate_benchmark_chart():
 
     out_path = OUTPUT_DIR / "benchmark_comparison.jpg"
     cv2.imwrite(str(out_path), chart)
-    print(f"  ✅ Benchmark chart: {out_path}")
+    print(f"  [OK] Benchmark chart: {out_path}")
     return out_path
 
 
@@ -458,7 +458,7 @@ def generate_improvement_summary():
 
     out_path = OUTPUT_DIR / "improvement_summary.jpg"
     cv2.imwrite(str(out_path), card)
-    print(f"  ✅ Improvement summary: {out_path}")
+    print(f"  [OK] Improvement summary: {out_path}")
     return out_path
 
 
@@ -515,7 +515,7 @@ def generate_severity_distribution():
 
     out_path = OUTPUT_DIR / "severity_distribution.jpg"
     cv2.imwrite(str(out_path), chart)
-    print(f"  ✅ Severity distribution: {out_path}")
+    print(f"  [OK] Severity distribution: {out_path}")
     return out_path
 
 
@@ -524,7 +524,7 @@ def generate_severity_distribution():
 # ═══════════════════════════════════════════════════════════════════════════════
 if __name__ == "__main__":
     print("=" * 70)
-    print("  🎯 GENERATING DEMO RESULTS FOR PRESENTATION")
+    print("   GENERATING DEMO RESULTS FOR PRESENTATION")
     print("=" * 70)
 
     # 1. Select sample images from validation set
@@ -532,7 +532,7 @@ if __name__ == "__main__":
     all_images = sorted(img_dir.glob("*.jpg"))
 
     if len(all_images) == 0:
-        print("❌ No images found in dataset directories!")
+        print("[FAIL] No images found in dataset directories!")
         exit(1)
 
     # Pick 6 diverse images from different regions
@@ -544,7 +544,7 @@ if __name__ == "__main__":
 
     random.seed(42)  # Reproducibility
 
-    print(f"\n📸 Generating 4-panel characterization for {len(sample_indices)} sample images...")
+    print(f"\n Generating 4-panel characterization for {len(sample_indices)} sample images...")
     print("-" * 70)
 
     for idx, si in enumerate(sample_indices):
@@ -553,23 +553,23 @@ if __name__ == "__main__":
         generate_4panel(img_path, out_path, sample_id=idx + 1)
 
     # 2. Generate benchmark comparison
-    print(f"\n📊 Generating benchmark comparison chart...")
+    print(f"\n Generating benchmark comparison chart...")
     print("-" * 70)
     generate_benchmark_chart()
 
     # 3. Generate improvement summary card
-    print(f"\n📋 Generating improvement summary card...")
+    print(f"\n Generating improvement summary card...")
     print("-" * 70)
     generate_improvement_summary()
 
     # 4. Generate severity distribution
-    print(f"\n📈 Generating severity distribution chart...")
+    print(f"\n Generating severity distribution chart...")
     print("-" * 70)
     generate_severity_distribution()
 
     print("\n" + "=" * 70)
-    print(f"  ✅ ALL RESULTS SAVED TO: {OUTPUT_DIR}/")
+    print(f"  [OK] ALL RESULTS SAVED TO: {OUTPUT_DIR}/")
     print("=" * 70)
     print("\nGenerated files:")
     for f in sorted(OUTPUT_DIR.glob("*")):
-        print(f"  📄 {f.name} ({f.stat().st_size // 1024} KB)")
+        print(f"   {f.name} ({f.stat().st_size // 1024} KB)")

@@ -60,11 +60,11 @@ def characterize_image(image_path, model_path, output_path=None, depth_backend="
     register_custom_modules()
 
     # 2. Load YOLOv8-PD-Seg Segmentation Model
-    print("⏳ Loading YOLOv8-PD-Seg model...")
+    print("[INFO] Loading YOLOv8-PD-Seg model...")
     seg_model = YOLO(model_path)
 
     # 3. Load Depth Estimator (Paper 2)
-    print("⏳ Initializing Monocular Depth Estimator...")
+    print("[INFO] Initializing Monocular Depth Estimator...")
     depth_estimator = DepthEstimator(model_type=depth_backend)
     depth_estimator.load_model()
 
@@ -79,12 +79,12 @@ def characterize_image(image_path, model_path, output_path=None, depth_backend="
     original_img = img.copy()
 
     # 5. Run Instance Segmentation (Paper 2 Section 4)
-    print(f"⏳ Running segmentation (conf={conf})...")
+    print(f"[INFO] Running segmentation (conf={conf})...")
     results = seg_model(img, conf=conf, verbose=False)
     result = results[0]
 
     # 6. Generate Monocular Depth Map (Paper 2 Section 3.2)
-    print("⏳ Generating dense depth map...")
+    print("[INFO] Generating dense depth map...")
     depth_map = depth_estimator.estimate_depth(original_img)
 
     # Prepare visualizations
@@ -169,15 +169,15 @@ def characterize_image(image_path, model_path, output_path=None, depth_backend="
     total_damage_percentage = (total_pothole_area / total_image_pixels) * 100.0 if total_image_pixels > 0 else 0.0
 
     # =========================================================================
-    # Terminal Results Table (Matching Paper 2, Section 5.1 & Table on Page 20)
+    # Terminal Results Table (Matching Characterization Specifications)
     # =========================================================================
     print("\n" + "=" * 75)
-    print("  📊 CHARACTERIZATION SUMMARY (Paper 2, Table Page 20 & 22)")
+    print("  [SUMMARY] CHARACTERIZATION SUMMARY")
     print("=" * 75)
-    print(f"• Total Image Resolution:   {w} x {h} ({total_image_pixels:,} pixels)")
-    print(f"• Total Potholes Detected:  {len(pothole_records)}")
-    print(f"• Total Damaged Area:       {total_pothole_area:,.1f} pixels")
-    print(f"• Percentage of Damage:     {total_damage_percentage:.2f} %")
+    print(f"- Total Image Resolution:   {w} x {h} ({total_image_pixels:,} pixels)")
+    print(f"- Total Potholes Detected:  {len(pothole_records)}")
+    print(f"- Total Damaged Area:       {total_pothole_area:,.1f} pixels")
+    print(f"- Percentage of Damage:     {total_damage_percentage:.2f} %")
     print("-" * 75)
 
     if pothole_records:
@@ -235,7 +235,7 @@ def characterize_image(image_path, model_path, output_path=None, depth_backend="
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     cv2.imwrite(output_path, four_panel_grid)
-    print(f"\n✅ 4-Panel characterization visualization saved to: {output_path}")
+    print(f"\n[OK] 4-Panel characterization visualization saved to: {output_path}")
 
     return {
         'total_potholes': len(pothole_records),

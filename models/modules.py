@@ -351,7 +351,7 @@ class LSCDSegHead(nn.Module):
             nn.Conv2d(in_channels, 4 * reg_max, 1),
         )
 
-        # ⭐ NEW: Mask coefficient branch (from Paper 2 concept)
+        # NEW: Mask coefficient branch (from Paper 2 concept)
         self.mask_head = nn.Sequential(
             nn.Conv2d(in_channels, in_channels, 3, padding=1, bias=False),
             nn.BatchNorm2d(in_channels),
@@ -363,7 +363,7 @@ class LSCDSegHead(nn.Module):
         shared = self.shared_conv(x)
         cls_out = self.cls_head(shared)
         reg_out = self.reg_head(shared)
-        mask_out = self.mask_head(shared)   # ⭐ mask coefficients
+        mask_out = self.mask_head(shared)   # mask coefficients
         return cls_out, reg_out, mask_out
 
 

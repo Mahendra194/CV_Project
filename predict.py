@@ -89,7 +89,7 @@ def predict_single(model_path, source, imgsz=640, conf=0.25, device='',
                     print(f"       Mask area: {area_pixels:.0f} pixels")
 
         if masks is not None:
-            print(f"  Segmentation masks: {len(masks)} generated ✅")
+            print(f"  Segmentation masks: {len(masks)} generated [OK]")
         else:
             print(f"  Segmentation masks: Not available (detection-only model)")
 

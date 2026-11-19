@@ -3,7 +3,7 @@
 
 ---
 
-## 📌 Project Overview
+## Project Overview
 
 **Original Paper (Paper 1):** YOLOv8-PD — Road damage **detection** (bounding box only)  
 **Reference Paper (Paper 2):** Pothole Characterization — **Segmentation + depth estimation**  
@@ -11,7 +11,7 @@
 
 ---
 
-## 🔄 Changes Made
+## Changes Made
 
 ### 1. Project Structure Created
 
@@ -120,7 +120,7 @@ Features:
 
 ---
 
-## 📊 How to Run (Step by Step)
+## How to Run (Step by Step)
 
 ### Step 1: Install Dependencies
 ```bash
@@ -160,7 +160,7 @@ python predict.py --source test_images/ --compare
 
 ---
 
-## 🧪 Expected Improvements
+## Expected Improvements
 
 | Metric | Baseline (YOLOv8n-seg) | Our Model (YOLOv8-PD-Seg) |
 |--------|----------------------|--------------------------|
@@ -171,7 +171,7 @@ python predict.py --source test_images/ --compare
 
 ---
 
-## 📚 References
+## References
 
 1. **Paper 1:** Zeng, J. & Zhong, H. (2024). "YOLOv8-PD: an improved road damage detection algorithm based on YOLOv8n model." Scientific Reports, 14, 12052.
 2. **Paper 2:** Baroudi, U., BaHamid, A., Elalfy, Y., & Al Alami, Z. (2025). "Enhancing Pothole Detection and Characterization: Integrated Segmentation and Depth Estimation in Road Anomaly Systems." arXiv:2504.13648.

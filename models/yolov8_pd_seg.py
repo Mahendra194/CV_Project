@@ -66,12 +66,12 @@ class YOLOv8PDSeg(nn.Module):
     ├── LSCD-Seg-Head (Paper 1 + Paper 2):
     │   ├── Classification branch → damage type
     │   ├── Bbox regression branch → location
-    │   └── Mask coefficient branch → 32 coefficients ⭐
-    └── Proto Module (Paper 2) → 32 prototype masks ⭐
+    │   └── Mask coefficient branch → 32 coefficients (NEW)
+    └── Proto Module (Paper 2) → 32 prototype masks (NEW)
 
     OUTPUT:
     ├── Bounding boxes + class labels (same as Paper 1)
-    └── Instance segmentation masks (NEW from Paper 2) ⭐
+    └── Instance segmentation masks (NEW from Paper 2)
     """
 
     def __init__(self, num_classes=4, num_protos=32):
