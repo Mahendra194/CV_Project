@@ -514,7 +514,7 @@ def generate_comparison_chart():
 
     out_p = SHOWCASE_DIR / "base_paper_vs_our_model_comparison.jpg"
     cv2.imwrite(str(out_p), chart)
-    for alt_path in [Path("Base_Paper_vs_Our_Model_Comparisons/1_Benchmark_Accuracy_Comparison.jpg"),
+    for alt_path in [Path("assets/comparisons/1_Benchmark_Accuracy_Comparison.jpg"),
                      Path("latex_paper/figures/1_Benchmark_Accuracy_Comparison.jpg")]:
         alt_path.parent.mkdir(parents=True, exist_ok=True)
         cv2.imwrite(str(alt_path), chart)
@@ -576,7 +576,7 @@ def generate_architecture_card():
 
     out_p = SHOWCASE_DIR / "architecture_improvement_card.jpg"
     cv2.imwrite(str(out_p), card)
-    for alt_path in [Path("Base_Paper_vs_Our_Model_Comparisons/2_Architecture_Improvements_Card.jpg"),
+    for alt_path in [Path("assets/comparisons/2_Architecture_Improvements_Card.jpg"),
                      Path("latex_paper/figures/2_Architecture_Improvements_Card.jpg")]:
         alt_path.parent.mkdir(parents=True, exist_ok=True)
         cv2.imwrite(str(alt_path), card)

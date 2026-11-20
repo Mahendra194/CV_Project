@@ -32,9 +32,9 @@ latex_paper/
 Then add `\includegraphics` commands in the LaTeX source where needed.
 
 ### Figures from your project (copy these in):
-- `Base_Paper_vs_Our_Model_Comparisons/1_Benchmark_Accuracy_Comparison.jpg`
-- `Base_Paper_vs_Our_Model_Comparisons/2_Architecture_Improvements_Card.jpg`
-- `Pothole_Characterization_Images/*.jpg` (all 4 characterization panels)
+- `assets/comparisons/1_Benchmark_Accuracy_Comparison.jpg`
+- `assets/comparisons/2_Architecture_Improvements_Card.jpg`
+- `assets/characterization/*.jpg` (all 4 characterization panels)
 - `runs/segment/runs/test_pipeline/confusion_matrix.png`
 - `runs/segment/runs/test_pipeline/results.png`
 - `runs/segment/runs/test_pipeline/BoxPR_curve.png`

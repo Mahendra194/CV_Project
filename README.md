@@ -26,6 +26,23 @@ This project advances road surface inspection by combining:
 
 ```
 CV_Project/
+├── assets/                           # Visual assets, samples & diagnostic reports
+│   ├── sample_images/                # Original test & input road images
+│   │   ├── 1_Dual_Pothole_Input.png
+│   │   ├── 2_Car_Wheel_Pothole_Input.png
+│   │   ├── 3_Water_Pothole_Input.png
+│   │   ├── 4_Road_Crack_Input.png
+│   │   ├── 5_Traffic_Pothole_Input.png
+│   │   └── 6_Test_Road_Pothole.png
+│   ├── characterization/             # 4-Panel Diagnostic Reports (Segmentation + Depth + HUD)
+│   │   ├── 1_Dual_Pothole_Characterization.jpg
+│   │   ├── 2_Car_Wheel_Pothole_Characterization.jpg
+│   │   ├── 3_Water_Pothole_Characterization.jpg
+│   │   ├── 4_Road_Crack_Characterization.jpg
+│   │   └── 5_Traffic_Pothole_Characterization.jpg
+│   └── comparisons/                  # Quantitative benchmark charts & architecture cards
+│       ├── 1_Benchmark_Accuracy_Comparison.jpg
+│       └── 2_Architecture_Improvements_Card.jpg
 ├── configs/
 │   └── yolov8-pd-seg.yaml            # YOLOv8-PD-Seg architecture specification
 ├── models/
@@ -37,22 +54,6 @@ CV_Project/
 │   ├── main.tex                      # Full LaTeX source with TikZ diagrams and PGFPlots charts
 │   ├── README.md                     # Overleaf import instructions
 │   └── figures/                      # High-resolution benchmark and characterization images
-├── Pothole_Characterization_Images/  # 4-Panel Diagnostic Reports (Segmentation + Depth + HUD)
-│   ├── 1_Dual_Pothole_Characterization.jpg
-│   ├── 2_Car_Wheel_Pothole_Characterization.jpg
-│   ├── 3_Water_Pothole_Characterization.jpg
-│   ├── 4_Road_Crack_Characterization.jpg
-│   └── 5_Traffic_Pothole_Characterization.jpg
-├── Base_Paper_vs_Our_Model_Comparisons/ # Quantitative comparison charts & tables
-│   ├── 1_Benchmark_Accuracy_Comparison.jpg
-│   └── 2_Architecture_Improvements_Card.jpg
-├── Original_Pothole_Images/          # Original test & input images
-│   ├── 1_Dual_Pothole_Input.png
-│   ├── 2_Car_Wheel_Pothole_Input.png
-│   ├── 3_Water_Pothole_Input.png
-│   ├── 4_Road_Crack_Input.png
-│   ├── 5_Traffic_Pothole_Input.png
-│   └── 6_Test_Road_Pothole.png
 ├── scripts/                          # Utility & Data preparation scripts
 │   ├── prepare_dataset.py            # Converts RDD2022 bounding boxes to segmentation polygons
 │   ├── verify_model.py               # Verifies architecture forward pass and dimensions
@@ -60,6 +61,9 @@ CV_Project/
 │   ├── build_showcase_folder.py      # Generates 4-panel diagnostic reports
 │   └── process_user_images.py        # Processes input road images
 ├── docs/                             # Academic & architectural documentation
+│   ├── papers/                       # Published reference literature
+│   │   ├── Paper1_YOLOv8_PD_2024.pdf
+│   │   └── Paper2_Pothole_Characterization_2025.pdf
 │   ├── base_architecture_and_changes.md
 │   ├── project_improvements.md
 │   └── CHANGES.md
@@ -131,7 +135,7 @@ python train.py --model baseline --epochs 20 --batch 16
 Run the integrated pipeline combining instance segmentation, depth estimation, and hazard scoring:
 
 ```bash
-python characterize_potholes.py --image Original_Pothole_Images/1_Dual_Pothole_Input.png
+python characterize_potholes.py --image assets/sample_images/1_Dual_Pothole_Input.png
 ```
 
 This generates a 4-panel diagnostic visualization:
