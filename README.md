@@ -22,60 +22,74 @@ This project advances road surface inspection by combining:
 
 ---
 
-## Repository Structure
+## Project Architecture
+
+YOLOv8-PD-Seg is a unified multi-task vision framework that integrates lightweight instance segmentation with monocular depth estimation to detect, segment, and quantitatively characterize road surface anomalies.
 
 ```
-CV_Project/
-├── assets/                           # Visual assets, samples & diagnostic reports
-│   ├── sample_images/                # Original test & input road images
-│   │   ├── 1_Dual_Pothole_Input.png
-│   │   ├── 2_Car_Wheel_Pothole_Input.png
-│   │   ├── 3_Water_Pothole_Input.png
-│   │   ├── 4_Road_Crack_Input.png
-│   │   ├── 5_Traffic_Pothole_Input.png
-│   │   └── 6_Test_Road_Pothole.png
-│   ├── characterization/             # 4-Panel Diagnostic Reports (Segmentation + Depth + HUD)
-│   │   ├── 1_Dual_Pothole_Characterization.jpg
-│   │   ├── 2_Car_Wheel_Pothole_Characterization.jpg
-│   │   ├── 3_Water_Pothole_Characterization.jpg
-│   │   ├── 4_Road_Crack_Characterization.jpg
-│   │   └── 5_Traffic_Pothole_Characterization.jpg
-│   └── comparisons/                  # Quantitative benchmark charts & architecture cards
-│       ├── 1_Benchmark_Accuracy_Comparison.jpg
-│       └── 2_Architecture_Improvements_Card.jpg
-├── configs/
-│   └── yolov8-pd-seg.yaml            # YOLOv8-PD-Seg architecture specification
-├── models/
-│   ├── __init__.py
-│   ├── modules.py                    # BOT, LSKA, C2fGhost, Proto, and LSCDSegHead modules
-│   ├── depth_estimator.py            # DenseDepth & Monocular depth characterization module
-│   └── yolov8_pd_seg.py              # PyTorch model definitions
-├── latex_paper/                      # Research Paper in IEEE conference format (Overleaf ready)
-│   ├── main.tex                      # Full LaTeX source with TikZ diagrams and PGFPlots charts
-│   ├── README.md                     # Overleaf import instructions
-│   └── figures/                      # High-resolution benchmark and characterization images
-├── scripts/                          # Utility & Data preparation scripts
-│   ├── prepare_dataset.py            # Converts RDD2022 bounding boxes to segmentation polygons
-│   ├── verify_model.py               # Verifies architecture forward pass and dimensions
-│   ├── compare_models.py             # Benchmarking script
-│   ├── build_showcase_folder.py      # Generates 4-panel diagnostic reports
-│   └── process_user_images.py        # Processes input road images
-├── docs/                             # Academic & architectural documentation
-│   ├── papers/                       # Published reference literature
-│   │   ├── Paper1_YOLOv8_PD_2024.pdf
-│   │   └── Paper2_Pothole_Characterization_2025.pdf
-│   ├── base_architecture_and_changes.md
-│   ├── project_improvements.md
-│   └── CHANGES.md
-├── train.py                          # Multi-model training pipeline (baseline / improved / custom)
-├── val.py                            # Validation and mAP evaluation script
-├── predict.py                        # Inference on images and videos
-├── characterize_potholes.py          # End-to-end pipeline: Segmentation + Depth Map + Volume estimation
-├── register_modules.py               # Hooks custom modules into Ultralytics YOLOv8 engine
-├── requirements.txt                  # Python dependencies
-├── showcase.md                       # Comprehensive Presentation Showcase Report
-└── README.md                         # Main repository guide
+                              Input Road Image (640 x 640 x 3)
+                                            │
+                                            ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                               BACKBONE NETWORK (Lightweight)                           │
+│  Standard Convolutions + C2f Feature Extraction                                       │
+│  ├── BOTModule (BoTNet MHSA): Captures long-span global crack continuity               │
+│  └── LSKAModule: Large Separable Kernel Attention (19x19 Receptive Field)              │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │ Multi-scale Features (P3, P4, P5)
+                                            ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                              NECK FEATURE FUSION (PANet / FPN)                         │
+│  ├── Multi-scale Feature Pyramid Aggregation                                           │
+│  └── C2fGhost Blocks: Ghost convolutions cut parameter count by 12.5% and ~50% FLOPs   │
+└───────────────────────┬───────────────────────────────────────┬────────────────────────┘
+                        │ P3, P4, P5 Features                   │ Raw Image / P3 Feature
+                        ▼                                       ▼
+┌───────────────────────────────────────────────┐   ┌────────────────────────────────────┐
+│      INSTANCE SEGMENTATION BRANCH (LSCD-Seg)   │   │    MONOCULAR DEPTH BRANCH (3D)     │
+│                                               │   │                                    │
+│  ├── ProtoModule (P3 Scale)                   │   │  DenseDepth / MiDaS Depth Engine   │
+│  │   └── 32 Prototype Masks (160 x 160)       │   │  ├── Dense Feature Encoder         │
+│  │                                            │   │  └── Bilinear Upsampling Decoder   │
+│  └── LSCD-Seg Shared Convolution Head         │   │                                    │
+│      ├── Class Branch: D00, D10, D20, D40     │   │  Output: Normalized Depth Map      │
+│      ├── Bounding Box Branch: (x, y, w, h)    │   │  D(x, y) in [0, 1] (Continuous)    │
+│      └── Mask Branch: 32 Mask Coefficients    │   │                                    │
+│                                               │   └─────────────────┬──────────────────┘
+│  Linear Combination: Sigmoid(Coeffs x Protos) │                     │
+│  Output: Pixel-Level Segmentation Masks       │                     │
+└───────────────────────┬───────────────────────┘                     │
+                        │                                             │
+                        │   Polygon Mask M(x, y)                      │ Depth Map D(x, y)
+                        └───────────────────────┬─────────────────────┘
+                                                ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                      3D POTHOLE CHARACTERIZATION & HAZARD REASONING                    │
+│                                                                                        │
+│  1. Damage Geometry:        Contour Area A = ∮ contour ds, Road Damage % = (A / WxH)x100│
+│  2. Pothole Depth (PD):     Mean depth inside damage mask: PD = (1/N) ∑ D(x, y)        │
+│  3. Surrounding Depth (SD): Mean depth of adjacent asphalt ring: SD = (1/M) ∑ D(x, y) │
+│  4. Cavity Verification:    Confirms physical cavity depression if PD > SD (Stain Filter)│
+│  5. Relative Depth (RPD):   RPD = ((PD - SD) / SD) x 100%                              │
+│  6. Hazard Rating:          Automated classification: SEVERE, HIGH, MODERATE, LOW      │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │
+                                            ▼
+                       4-Panel Integrated Diagnostic HUD Display
+            [Panel A: Image | Panel B: Mask | Panel C: Depth | Panel D: HUD]
 ```
+
+### Architectural Modules Overview
+
+| Component | Architecture | Role & Technical Impact |
+| :--- | :--- | :--- |
+| **BOTModule** | Bottleneck Transformer (Multi-Head Self-Attention) | Replaces standard convolutions in deep backbone layers. Computes non-local interactions across the full image to capture continuous crack topologies regardless of shadow or road markings. |
+| **LSKAModule** | Large Separable Kernel Attention ($19\times19$ kernel) | Decomposes 2D large convolution into cascaded 1D horizontal and vertical depth-wise operations, providing a massive effective receptive field without parameter explosion. |
+| **C2fGhost** | GhostBottleneck Feature Extraction | Replaces heavy C2f blocks in the feature fusion neck. Generates intrinsic feature maps with cheap linear transforms, cutting parameters by 12.5% and neck FLOPs by ~50%. |
+| **ProtoModule** | Mask Prototype Generator (P3 feature scale) | Generates 32 high-resolution ($160 \times 160$) base prototype masks using separable convolutions, providing high-fidelity spatial details. |
+| **LSCD-Seg Head** | Lightweight Shared Convolution Detection & Segmentation | Extends the base paper's detection head with an efficient third branch producing 32 mask coefficients per instance, multiplied with prototype masks to yield exact damage boundaries. |
+| **Depth Engine** | Monocular Depth Estimation (DenseDepth / MiDaS) | Predicts per-pixel dense relative elevation maps $D(x, y) \in [0, 1]$ directly from single-lens monocular images without requiring expensive stereo cameras or LiDAR. |
+| **Characterization** | Relative Pothole Depth ($RPD$) & Hazard Logic | Computes physical depression metrics ($PD$, $SD$), validates genuine cavities ($PD > SD$), and grades road hazards into 4 actionable maintenance tiers. |
 
 ---
 
