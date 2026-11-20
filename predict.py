@@ -1,20 +1,17 @@
 """
-Prediction / Inference Script for YOLOv8-PD-Seg
+Prediction & Inference Script for YOLOv8-PD-Seg
 =================================================
-Run inference and visualize results with bounding boxes + segmentation masks.
+Runs instance segmentation inference and renders polygon masks and bounding boxes.
 
 Usage:
   # Predict on a single image
-  python predict.py --model runs/improved_yolov8_pd_seg/weights/best.pt --source image.jpg
+  python predict.py --model yolov8n-seg.pt --source assets/sample_images/1_Dual_Pothole_Input.png
 
-  # Predict on a folder of images
-  python predict.py --model best.pt --source test_images/
+  # Predict on a directory of images
+  python predict.py --model yolov8n-seg.pt --source assets/sample_images/
 
-  # Predict with video
-  python predict.py --model best.pt --source road_video.mp4
-
-  # Compare baseline vs improved on same images
-  python predict.py --compare --source test_images/
+  # Compare baseline vs improved model
+  python predict.py --compare --source assets/sample_images/
 """
 
 import argparse

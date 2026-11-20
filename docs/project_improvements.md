@@ -387,8 +387,8 @@ class LSCDSegHead(nn.Module):
 ### 6.2 Running Characterization:
 ```bash
 python characterize_potholes.py \
-  --image test_images/pothole_test.png \
-  --model runs/segment/custom_yolov8_pd_seg/weights/best.pt \
+  --image assets/sample_images/1_Dual_Pothole_Input.png \
+  --model yolov8n-seg.pt \
   --depth midas \
   --output runs/characterization_report.jpg
 ```

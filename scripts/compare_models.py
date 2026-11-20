@@ -1,26 +1,20 @@
 """
-Model Comparison Script: Baseline vs Improved YOLOv8-PD-Seg
-=============================================================
-Runs both models SEPARATELY on the same road image and produces:
-  1. Baseline-only output (bounding boxes + masks)
-  2. Improved-only output (bounding boxes + masks)
-  3. Side-by-side comparison image
+Comparative Benchmarking: Baseline vs Improved YOLOv8-PD-Seg
+============================================================
+Runs baseline and proposed models on target road scenes to produce:
+  1. Baseline bounding boxes & masks
+  2. Improved YOLOv8-PD-Seg polygon masks & detections
+  3. Synchronized side-by-side diagnostic comparisons
 
 Usage:
-  # Compare using the test pothole image
-  python compare_models.py --image test_images/pothole_test.png
+  # Compare using sample road image
+  python scripts/compare_models.py --image assets/sample_images/1_Dual_Pothole_Input.png
 
-  # Compare with a specific image
-  python compare_models.py --image path/to/road_image.jpg
+  # Run baseline model only
+  python scripts/compare_models.py --image assets/sample_images/1_Dual_Pothole_Input.png --model baseline
 
-  # Run ONLY the baseline model
-  python compare_models.py --image test_images/pothole_test.png --model baseline
-
-  # Run ONLY the improved (custom) model
-  python compare_models.py --image test_images/pothole_test.png --model improved
-
-  # Change confidence threshold
-  python compare_models.py --image test_images/pothole_test.png --conf 0.15
+  # Run improved model only
+  python scripts/compare_models.py --image assets/sample_images/1_Dual_Pothole_Input.png --model improved
 """
 
 import argparse

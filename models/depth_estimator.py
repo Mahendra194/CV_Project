@@ -1,10 +1,12 @@
 """
-Depth Estimation & Pothole Characterization Module
-===================================================
-Faithfully implementing the depth estimation and characterization methodology
-from Paper 2:
-"Enhancing Pothole Detection and Characterization:
- Integrated Segmentation and Depth Estimation in Road Anomaly Systems" (2025)
+Monocular Depth Estimation & Pothole Characterization Module
+============================================================
+Implements monocular road elevation estimation and 3D cavity characterization:
+  - DenseDepth (DenseNet-169 backbone with bilinear upsampling decoder)
+  - Custom Encoder-Decoder depth architecture with skip connections
+  - Zero-shot MiDaS monocular depth estimation pipeline
+  - Mathematical characterization engine: PD, SD, Cavity check (PD > SD), RPD%, and Hazard Grading
+"""
 
 Key Components from Paper 2:
   1. Depth Models (Section 3.2):

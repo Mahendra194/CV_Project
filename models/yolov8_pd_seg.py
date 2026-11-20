@@ -1,12 +1,11 @@
 """
-YOLOv8-PD-Seg: Full Model Definition
-=====================================
-Combines:
-  - Paper 1 improvements: BOT, LSKA, C2fGhost, LSCD-Head
-  - Paper 2 improvement: Instance Segmentation (Proto + Mask coefficients)
+YOLOv8-PD-Seg: Unified Architectural Builder
+============================================
+Constructs the complete YOLOv8-PD-Seg model architecture by combining:
+  - Lightweight attention backbone & neck: BOTModule, LSKAModule, C2fGhost
+  - Instance segmentation head: ProtoModule (P3 scale) + LSCD-Seg Shared Conv Head
 
-This file registers all custom modules with Ultralytics so they can be
-used in the YAML config, and provides the model builder function.
+Registers all custom modules with Ultralytics engine for declarative YAML parsing.
 """
 
 import torch

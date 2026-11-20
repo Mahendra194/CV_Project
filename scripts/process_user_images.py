@@ -1,16 +1,16 @@
 """
-Process User-Provided Road Images with Full Paper 1 + Paper 2 Pipeline
-======================================================================
-Faithfully applies:
-  1. YOLOv8-PD-Seg Instance Segmentation (Paper 1 + Paper 2)
-  2. DenseDepth Monocular Depth Estimation (Paper 2 Section 3.2)
-  3. Geometric Pothole Characterization (Paper 2 Section 5.1 & Table 4)
+Process Road Anomaly Test Images with Complete 3D Characterization
+==================================================================
+Pipeline stages:
+  1. YOLOv8-PD-Seg Instance Segmentation (Polygon Mask Extraction)
+  2. DenseDepth / MiDaS Monocular Depth Estimation
+  3. Geometric & Volumetric Pothole Characterization:
      - Pothole Depth (PD)
-     - Surrounding Depth (SD) restricted to surrounding road surface ring
-     - Cavity Verification (PD > SD)
+     - Surrounding Depth (SD) on asphalt ring
+     - Physical Cavity Verification (PD > SD)
      - Relative Pothole Depth (RPD %)
      - Damaged Area (px) & Road Damage Percentage (%)
-     - Hazard Severity Level (Severe, High, Moderate, Low)
+     - 4-Tier Hazard Severity Classification (Severe, High, Moderate, Low)
 """
 
 import cv2

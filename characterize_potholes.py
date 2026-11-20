@@ -1,9 +1,9 @@
 """
 End-to-End Pothole Characterization Pipeline
 =============================================
-Faithfully implementing the characterization framework from:
-"Enhancing Pothole Detection and Characterization:
- Integrated Segmentation and Depth Estimation in Road Anomaly Systems" (Paper 2, 2025)
+Unified execution script combining YOLOv8-PD-Seg instance segmentation
+with monocular depth estimation and 3D cavity verification.
+"""
 
 Workflow:
   1. Base Architecture (Paper 1):

@@ -1,17 +1,14 @@
 """
-Validation Script for YOLOv8-PD-Seg
-====================================
-Evaluate trained models and generate comparison metrics.
+Validation & Evaluation Script for YOLOv8-PD-Seg
+=================================================
+Evaluates trained instance segmentation models on RDD2022 validation splits.
 
 Usage:
-  # Validate improved model
-  python val.py --model runs/improved_yolov8_pd_seg/weights/best.pt
+  # Validate model checkpoint
+  python val.py --model yolov8n-seg.pt --data datasets/rdd2022_seg/dataset.yaml
 
-  # Compare baseline vs improved
+  # Compare baseline vs improved model metrics
   python val.py --compare
-
-  # Validate with specific dataset
-  python val.py --model best.pt --data datasets/rdd2022_seg/dataset.yaml
 """
 
 import argparse

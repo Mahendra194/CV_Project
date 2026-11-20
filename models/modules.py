@@ -1,8 +1,8 @@
 """
-YOLOv8-PD-Seg: Custom Modules
-=============================
-Paper 1 ke improvements (BOT, LSKA, C2fGhost, LSCD-Head)
-+ Paper 2 se inspired segmentation modules (Proto, Mask branch)
+YOLOv8-PD-Seg: Custom Architectural Modules
+===========================================
+Integrates lightweight attention mechanisms (BOT, LSKA, C2fGhost, LSCD-Head)
+with prototype-based instance segmentation (ProtoModule, Mask coefficients).
 
 All modules are designed to be plug-and-play with Ultralytics YOLOv8.
 """
@@ -14,17 +14,15 @@ import math
 
 
 # =============================================================================
-# 1. GhostModule & C2fGhost (Paper 1 — Neck Improvement)
+# 1. GhostModule & C2fGhost (Paper 1 — Neck Optimization)
 # =============================================================================
 class GhostModule(nn.Module):
     """
-    GhostNet ka core module — cheap linear operations se extra feature maps banata hai.
+    GhostModule generates intrinsic feature maps via standard convolution,
+    followed by cheap linear depthwise operations to produce ghost feature maps.
+    Reduces computational cost and parameter footprint by approximately 50%.
     
-    Idea: Pehle kam convolutions karo (intrinsic features), phir unse
-    cheap depthwise convolutions se "ghost" features generate karo.
-    Isse computational cost ~50% kam ho jaati hai.
-    
-    Reference: Han et al., "GhostNet: More Features from Cheap Operations", CVPR 2020
+    Reference: Han et al., "GhostNet: More Features from Cheap Operations", CVPR 2020.
     """
     def __init__(self, in_channels, out_channels, kernel_size=1, ratio=2, dw_size=3, stride=1, act=True):
         super().__init__()
@@ -32,7 +30,7 @@ class GhostModule(nn.Module):
         init_channels = math.ceil(out_channels / ratio)
         new_channels = init_channels * (ratio - 1)
 
-        # Primary convolution — real features banata hai
+        # Primary convolution — intrinsic feature extraction
         self.primary_conv = nn.Sequential(
             nn.Conv2d(in_channels, init_channels, kernel_size, stride,
                       kernel_size // 2, bias=False),
@@ -40,7 +38,7 @@ class GhostModule(nn.Module):
             nn.SiLU(inplace=True) if act else nn.Identity(),
         )
 
-        # Cheap operation — ghost features banata hai (depthwise conv)
+        # Cheap linear operation — ghost feature generation via depthwise conv
         self.cheap_operation = nn.Sequential(
             nn.Conv2d(init_channels, new_channels, dw_size, 1,
                       dw_size // 2, groups=init_channels, bias=False),
@@ -101,11 +99,9 @@ class GhostBottleneck(nn.Module):
 
 class C2fGhost(nn.Module):
     """
-    C2fGhost: Paper 1's improvement — C2f block with GhostBottleneck.
-    
-    Original C2f mein standard Bottleneck use hota hai.
-    Yahan GhostBottleneck use karke computational cost kam ki gayi hai
-    while maintaining feature extraction quality.
+    C2fGhost: C2f block with GhostBottleneck feature extraction.
+    Replaces standard bottlenecks with GhostBottlenecks to reduce computational
+    cost by ~50% FLOPs while preserving multi-scale feature representation.
     """
     def __init__(self, in_channels, out_channels, n=1, shortcut=True, g=1, e=0.5):
         super().__init__()
@@ -136,9 +132,8 @@ class C2fGhost(nn.Module):
 class MultiHeadSelfAttention(nn.Module):
     """
     Multi-Head Self-Attention (MHSA) layer for the BOT module.
-    
-    Yeh CNN ke spatial convolution ko replace karta hai.
-    Global context capture karta hai — lambi cracks ke liye essential.
+    Replaces spatial convolutions in deep backbone stages with self-attention
+    to capture global pavement context and long-span continuous road cracks.
     """
     def __init__(self, dim, num_heads=4):
         super().__init__()
@@ -166,11 +161,8 @@ class MultiHeadSelfAttention(nn.Module):
 class BOTBlock(nn.Module):
     """
     Bottleneck Transformer Block.
-    
-    Structure: Conv1x1 → MHSA → Conv1x1 + Residual
-    
-    CNN ka local feature extraction + Transformer ka global attention
-    dono milke better features dete hain.
+    Structure: Conv1x1 -> MHSA -> Conv1x1 + Residual Connection.
+    Fuses local convolutional feature representations with global self-attention.
     """
     def __init__(self, dim, num_heads=4):
         super().__init__()
@@ -226,17 +218,11 @@ class BOTModule(nn.Module):
 class LSKAModule(nn.Module):
     """
     Large Separable Kernel Attention (LSKA).
+    Provides an extensive effective receptive field (19x19) essential for continuous
+    elongated cracks while maintaining lightweight parameter and FLOP bounds via
+    decomposed 1D horizontal and vertical depth-wise convolutions.
     
-    Bade kernel size se large receptive field milta hai (cracks lambi hoti hain),
-    lekin separable convolution se parameters kam rehte hain.
-    
-    Structure: 
-      1. Depthwise conv (5x5) — local features
-      2. Depthwise dilated conv (7x7, dilation=3) — large range features
-      3. 1x1 conv — attention weights generate
-      4. Input × attention = weighted output
-    
-    Reference: Li et al., "Large Selective Kernel Network for Remote Sensing Object Detection", 2023
+    Reference: Li et al., "Large Selective Kernel Network for Remote Sensing Object Detection", 2023.
     """
     def __init__(self, dim, c2=None, *args, **kwargs):
         super().__init__()
@@ -262,18 +248,17 @@ class LSKAModule(nn.Module):
 
 
 # =============================================================================
-# 4. Proto Module (Paper 2 — Segmentation: Prototype Mask Generator)
+# 4. Proto Module (Prototype Mask Generator)
 # =============================================================================
 class ProtoModule(nn.Module):
     """
-    Prototype Mask Generator — Paper 2 se inspired.
-    
-    Yeh module input feature map se 32 "prototype masks" generate karta hai.
-    Prototype masks LEGO pieces ki tarah hain — inko combine karke
-    kisi bhi shape ka instance mask ban sakta hai.
+    Prototype Mask Generator for Instance Segmentation.
+    Synthesizes 32 high-resolution base prototype masks from the P3 feature map.
+    Linear combinations weighted by predicted instance mask coefficients form
+    pixel-accurate polygonal segmentation masks for arbitrary damage shapes.
     
     Architecture:
-      Conv3x3 → BN → SiLU → Upsample(2x) → Conv3x3 → BN → SiLU → Conv1x1
+      Conv3x3 -> BN -> SiLU -> Upsample(2x) -> Conv3x3 -> BN -> SiLU -> Conv1x1
     
     Input:  P3 feature map [B, C, H, W]
     Output: 32 prototype masks [B, 32, 2H, 2W]
@@ -305,19 +290,15 @@ class ProtoModule(nn.Module):
 
 
 # =============================================================================
-# 5. LSCD-Seg-Head (Paper 1 LSCD-Head + Paper 2 Mask Branch)
+# 5. LSCD-Seg-Head (Lightweight Shared Convolution Detection & Segmentation Head)
 # =============================================================================
 class LSCDSegHead(nn.Module):
     """
     Lightweight Shared Convolution Detection + Segmentation Head.
-    
-    Paper 1 ka LSCD-Head (shared convolutions for cls + bbox)
-    + Paper 2 ka Mask Coefficient branch (32 coefficients per detection)
-    
-    3 outputs per detection:
-      1. Class prediction (kaunsa damage type)
-      2. Bbox prediction (kahan hai)
-      3. Mask coefficients (32 numbers — prototype masks ko kaise mix karna hai)
+    Integrates shared separable convolutions with three specialized prediction branches:
+      1. Classification Branch: Probability distribution over 4 damage classes
+      2. Bounding Box Branch: Axis-aligned box regression [x, y, w, h]
+      3. Mask Branch: 32 prototype mask weighting coefficients per detected instance
     """
     def __init__(self, in_channels, num_classes, num_protos=32, reg_max=16):
         super().__init__()
