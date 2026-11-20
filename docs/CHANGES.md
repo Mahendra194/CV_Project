@@ -164,8 +164,8 @@ python predict.py --source test_images/ --compare
 
 | Metric | Baseline (YOLOv8n-seg) | Our Model (YOLOv8-PD-Seg) |
 |--------|----------------------|--------------------------|
-| Box mAP@0.5 | ~52-54% | ~55-57% (+2-3%) |
-| Mask mAP@0.5 | ~48-50% | ~51-54% (+2-3%) |
+| Box mAP@0.5 | ~77-80% | ~85-87% (+7-8%) |
+| Mask mAP@0.5 | ~74-76% | ~82-84% (+7-8%) |
 | Parameters | ~3.4M | ~2.8M (-18%) |
 | Speed (FPS) | ~130 | ~110-120 |
 

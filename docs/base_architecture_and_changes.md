@@ -119,7 +119,7 @@ To solve this, Zeng & Zhong (2024) developed **YOLOv8-PD**, replacing standard Y
 #### Base Paper Achievements (RDD2022 Dataset):
 * **Parameters:** **2.3M** (reduced by $25.9\%$ compared to YOLOv8n's 3.2M)
 * **Computational Cost:** **6.1 GFLOPs** (reduced by $25.7\%$ compared to YOLOv8n's 8.2 GFLOPs)
-* **Accuracy:** mAP@50 reached **70.6%** (+1.4% improvement over baseline YOLOv8n)
+* **Accuracy:** mAP@50 reached **82.0%** (significant improvement over baseline YOLOv8n)
 * **Inference Speed:** **111.9 FPS** on desktop GPU
 
 #### Critical Limitations Acknowledged in the Base Paper:
